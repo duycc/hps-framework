@@ -1,5 +1,5 @@
 ﻿/**
- * @file     hpServer.cpp
+ * @file     HPServer.cpp
  * @brief
  * @author   YongDu
  * @date     2021-09-12
@@ -26,7 +26,7 @@ int main(int argc, char *const *argv) {
 
   // 加载配置文件
   CConfig *p_config = CConfig::GetInstance();
-  if (p_config->Load("hpServer.conf") == false) {
+  if (p_config->Load("HPServer.conf") == false) {
     printf("配置文件载入失败，退出!\n");
     exit(1);
   }
