@@ -44,7 +44,7 @@ $(LINK_OBJ_DIR)/%.o:%.cpp
 
 $(DEP_DIR)/%.d:%.cpp
 	echo -n $(LINK_OBJ_DIR)/ > $@
-	gcc -I$(INCLUDE_PATH) -MM $^ >> $@
+	g++ -I$(INCLUDE_PATH) -MM $^ >> $@
 
 
 

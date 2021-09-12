@@ -13,7 +13,7 @@ void Rtrim(char *string);
 void Ltrim(char *string);
 
 // 设置可执行程序标题相关函数
-void ngx_init_setproctitle();
-void ngx_setproctitle(const char *title);
+void hps_init_setproctitle();             // 移动环境变量位置
+void hps_setproctitle(const char *title); // 设置进程名
 
 #endif // __HPS_FUNC_H__
