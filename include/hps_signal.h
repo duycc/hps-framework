@@ -1,6 +1,6 @@
 ﻿
-#ifndef __NGX_SIGNAL_H__
-#define __NGX_SIGNAL_H__
+#ifndef __HPS_SIGNAL_H__
+#define __HPS_SIGNAL_H__
 
 //#include "ngx_signal2.h"
 //函数声明
