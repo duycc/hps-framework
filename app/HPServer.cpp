@@ -7,6 +7,7 @@
 
 // 程序入口函数
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,12 +15,14 @@
 
 #include "hps_c_conf.h" // 配置文件处理
 #include "hps_func.h"   // 函数声明
-#include "hps_signal.h"
 
 char **g_os_argv = NULL; // 原始命令行参数数组
 
-pid_t hps_pid;    // 当前进程 id
-pid_t hps_parent; // 当前进程父进程 id
+pid_t hps_pid;     // 当前进程 id
+pid_t hps_parent;  // 当前进程父进程 id
+int   hps_process; // 进程类型
+
+sig_atomic_t hps_reap; // 标识子进程状态变化
 
 static void free_resource(); // 内存释放
 
@@ -49,21 +52,20 @@ int main(int argc, char *const *argv) {
     // 初始化日志
     hps_log_init();
 
+    // 注册信号处理函数
+    if (hps_init_signals() != 0) {
+      exit_code = 1;
+      break;
+    }
+
     // 设置进程名，必须保证启动参数不再使用之后才可以设置
     hps_setproctitle("hpServer: master process");
 
-    // while (true) {
-    //   sleep(1);
-    //   printf("休息1秒\n");
-    // }
+    while (true) {
+      sleep(1);
+      printf("休息1秒\n");
+    }
   } while (false);
-
-  hps_log_stderr(0, "%s", argv[0]);
-  hps_log_stderr(0, "%10d", 21);
-  hps_log_stderr(0, "%.6f", 21.378);
-  hps_log_stderr(0, "%.6f", 12.999);
-  hps_log_stderr(0, "%xd", 1678);
-  hps_log_stderr(0, "%Xd", 1678);
 
   hps_log_stderr(0, "程序退出，再见了！");
   free_resource();

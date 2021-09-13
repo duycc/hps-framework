@@ -44,6 +44,21 @@ static u_char err_levels[][20] = {
  * @param ...
  */
 void hps_log_stderr(int err, const char *fmt, ...) {
+  //===----------------------------- Usage example ------------------------------===//
+  // hps_log_stderr(0, "%s", "argv[0]");
+  // hps_log_stderr(0, "%10d", 21);
+  // hps_log_stderr(0, "%.6f", 21.378);
+  // hps_log_stderr(0, "%.6f", 12.999);
+  // hps_log_stderr(0, "%xd", 1678);
+  // hps_log_stderr(0, "%Xd", 1678);
+  //                  ↓↓
+  // 2021/09/13 23:14:35 [stderr] 8644: hpServer: hpServer: master process
+  // 2021/09/13 23:14:35 [stderr] 8644: hpServer:         21
+  // 2021/09/13 23:14:35 [stderr] 8644: hpServer: 21.378000
+  // 2021/09/13 23:14:35 [stderr] 8644: hpServer: 12.999000
+  // 2021/09/13 23:14:35 [stderr] 8644: hpServer: 68e
+  // 2021/09/13 23:14:35 [stderr] 8644: hpServer: 68E
+
   va_list args;
   u_char  errstr[HPS_MAX_ERROR_STR + 1];
   u_char *p, *last;
