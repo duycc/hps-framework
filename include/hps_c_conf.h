@@ -29,9 +29,14 @@ public:
     return m_instance;
   }
 
-  bool Load(const char *p_confname);                        // 加载配置文件
-  const char *GetString(const char *p_itemname);            // 获取配置项内容
-  int GetIntDefault(const char *p_itemname, const int def); // 获取数字型配置项
+  // 加载配置文件
+  bool Load(const char *p_confname);
+
+  // 获取配置项内容
+  const char *GetString(const char *p_itemname);
+
+  // 获取数字型配置项
+  int GetIntDefault(const char *p_itemname, const int def);
 
   struct CGarCollection {
     ~CGarCollection() {
@@ -46,6 +51,7 @@ private:
   CConfig();
 
   static CConfig *m_instance;
+
   std::vector<LPCConfItem> m_ConfigItemList; // 存储配置文件项
 };
 

@@ -58,6 +58,13 @@ int main(int argc, char *const *argv) {
     // }
   } while (false);
 
+  hps_log_stderr(0, "%s", argv[0]);
+  hps_log_stderr(0, "%10d", 21);
+  hps_log_stderr(0, "%.6f", 21.378);
+  hps_log_stderr(0, "%.6f", 12.999);
+  hps_log_stderr(0, "%xd", 1678);
+  hps_log_stderr(0, "%Xd", 1678);
+
   hps_log_stderr(0, "程序退出，再见了！");
   free_resource();
   return exit_code;

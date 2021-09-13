@@ -26,7 +26,7 @@ void Ltrim(char *string) {
     return;
   }
   size_t len = strlen(string);
-  char *p_tmp = string;
+  char * p_tmp = string;
   if ((*p_tmp) != ' ') { // 不是以空格开头
     return;
   }

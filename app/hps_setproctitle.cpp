@@ -19,7 +19,7 @@
 
 size_t g_argvneedmem = 0; // 启动参数内存大小
 size_t g_envneedmem = 0;  // 相关环境变量总大小
-char *gp_envmem = NULL;   // 环境变量内存新位置
+char * gp_envmem = NULL;  // 环境变量内存新位置
 
 void hps_init_setproctitle() {
   for (int i = 0; environ[i]; ++i) {
