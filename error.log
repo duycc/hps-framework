@@ -1,0 +1,50 @@
+2021/09/14 22:59:17 [notice] 12452: master process ./hpServer 12452 【master】进程启动并执行......!
+2021/09/14 22:59:17 [notice] 12454: worker process 12454 【worker】进程启动并执行......!
+2021/09/14 22:59:17 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:18 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:19 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:20 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:21 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:22 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:23 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:24 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:25 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:26 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:27 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:28 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:29 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:30 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:31 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:32 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:33 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:34 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:35 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:36 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:37 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:38 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:39 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:40 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:41 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:42 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:43 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:44 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:45 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:46 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:47 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:48 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:49 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:50 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:51 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:52 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:53 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:54 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:55 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:56 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:57 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:58 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 22:59:59 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 23:00:00 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 23:00:01 [stderr] 12454: worker process 0 pid = 12454
+2021/09/14 23:00:02 [notice] 12452: signal 17 (SIGCHLD) received from 12454
+2021/09/14 23:00:02 [alert] 12452: pid = 12454 exited on signal 9!
+2021/09/14 23:00:03 [stderr] 12452: hpServer: master 进程 12452 休息1秒

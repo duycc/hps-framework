@@ -15,13 +15,15 @@
 
 #include "hps_c_conf.h" // 配置文件处理
 #include "hps_func.h"   // 函数声明
+#include "hps_macro.h"
 
 char **g_os_argv = NULL; // 原始命令行参数数组
 int    g_os_argc;        // 启动参数个数
 
-pid_t hps_pid;     // 当前进程 id
-pid_t hps_parent;  // 当前进程父进程 id
-int   hps_process; // 进程类型
+pid_t hps_pid;          // 当前进程 id
+pid_t hps_parent;       // 当前进程父进程 id
+int   hps_process;      // 进程类型
+int   g_daemonized = 0; // 是否以守护进程方式运行
 
 sig_atomic_t hps_reap; // 标识子进程状态变化
 
@@ -39,8 +41,8 @@ int main(int argc, char *const *argv) {
   g_os_argv = (char **)argv;
 
   hps_log.fd = -1;
-
-  hps_init_setproctitle(); //把环境变量搬家
+  hps_process = HPS_PROCESS_MASTER;
+  hps_reap = 0;
 
   do { // do...while(false) 方便退出释放资源
     // 加载配置文件
@@ -60,14 +62,23 @@ int main(int argc, char *const *argv) {
       break;
     }
 
-    // 创建 worker 子进程
+    hps_init_setproctitle(); //把环境变量搬家
+
+    // 创建守护进程
+    if (p_config->GetIntDefault("Daemon", 0) == 1) {
+      int cdaemonresult = hps_daemon();
+      if (cdaemonresult == -1) {
+        exit_code = 1;
+        break;
+      }
+      if (cdaemonresult == 1) {
+        return 0; // 原始的父进程，需要（正常）退出
+      }
+      g_daemonized = 1; // 守护进程模式的 master
+    }
+
+    // 创建 worker 子进程，并执行具体业务逻辑
     hps_master_process_cycle();
-
-    // while (true) {
-    //   sleep(1);
-    //   printf("休息1秒\n");
-    // }
-
   } while (false);
 
   hps_log_stderr(0, "程序退出，再见了！");
