@@ -17,6 +17,7 @@
 #include "hps_func.h"   // 函数声明
 
 char **g_os_argv = NULL; // 原始命令行参数数组
+int    g_os_argc;        // 启动参数个数
 
 pid_t hps_pid;     // 当前进程 id
 pid_t hps_parent;  // 当前进程父进程 id
@@ -34,6 +35,7 @@ int main(int argc, char *const *argv) {
   hps_pid = getpid();
   hps_parent = getppid();
 
+  g_os_argc = argc;
   g_os_argv = (char **)argv;
 
   hps_log.fd = -1;
@@ -58,13 +60,14 @@ int main(int argc, char *const *argv) {
       break;
     }
 
-    // 设置进程名，必须保证启动参数不再使用之后才可以设置
-    hps_setproctitle("hpServer: master process");
+    // 创建 worker 子进程
+    hps_master_process_cycle();
 
-    while (true) {
-      sleep(1);
-      printf("休息1秒\n");
-    }
+    // while (true) {
+    //   sleep(1);
+    //   printf("休息1秒\n");
+    // }
+
   } while (false);
 
   hps_log_stderr(0, "程序退出，再见了！");

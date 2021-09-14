@@ -31,6 +31,8 @@ u_char *hps_slprintf(u_char *buf, u_char *last, const char *fmt, ...);
 u_char *hps_vslprintf(u_char *buf, u_char *last, const char *fmt, va_list args);
 
 //===----------------------------- 信号及进程相关函数 ------------------------------===//
-int hps_init_signals(); // 信号相关初始化
+
+int  hps_init_signals();         // 信号相关初始化
+void hps_master_process_cycle(); // 进程初始化
 
 #endif // __HPS_FUNC_H__
