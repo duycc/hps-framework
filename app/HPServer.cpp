@@ -25,6 +25,8 @@ pid_t hps_parent;       // 当前进程父进程 id
 int   hps_process;      // 进程类型
 int   g_daemonized = 0; // 是否以守护进程方式运行
 
+CSocekt g_socket; // 全局 socket 管理
+
 sig_atomic_t hps_reap; // 标识子进程状态变化
 
 static void free_resource(); // 内存释放
@@ -58,6 +60,11 @@ int main(int argc, char *const *argv) {
 
     // 注册信号处理函数
     if (hps_init_signals() != 0) {
+      exit_code = 1;
+      break;
+    }
+
+    if (g_socket.Initialize() == false) {
       exit_code = 1;
       break;
     }

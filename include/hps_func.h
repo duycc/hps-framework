@@ -8,7 +8,9 @@
 #if !defined(__HPS_FUNC_H__)
 #define __HPS_FUNC_H__
 
-//===----------------------------- 字符串处理相关函数 -----------------------------===*/
+#include <stdarg.h>
+
+//===----------------------------- 字符串处理相关函数 -----------------------------===//
 void Rtrim(char *string);
 void Ltrim(char *string);
 
@@ -32,8 +34,9 @@ u_char *hps_vslprintf(u_char *buf, u_char *last, const char *fmt, va_list args);
 
 //===----------------------------- 信号及进程相关函数 ------------------------------===//
 
-int  hps_init_signals();         // 信号相关初始化
-void hps_master_process_cycle(); // 进程初始化
-int  hps_daemon();               // 守护进程初始化
+int  hps_init_signals();              // 信号相关初始化
+void hps_master_process_cycle();      // 进程初始化
+int  hps_daemon();                    // 守护进程初始化
+void hps_process_events_and_timers(); // 处理网络事件和定时器事件
 
 #endif // __HPS_FUNC_H__

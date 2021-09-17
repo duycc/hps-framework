@@ -145,10 +145,10 @@ static void hps_worker_process_cycle(int inum, const char *pprocname) {
   // g_threadpool.StopAll(); //测试Create()后立即释放的效果
 
   for (;;) {
-    hps_log_error_core(0, 0, "worker process %d pid = %P", inum, hps_pid);
+    // hps_log_error_core(0, 0, "worker process %d pid = %P", inum, hps_pid);
     sleep(1);
 
-    // hps_process_events_and_timers(); //处理网络事件和定时器事件
+    hps_process_events_and_timers(); // 处理网络事件和定时器事件
 
     /*if(false) //优雅的退出
     {
@@ -190,8 +190,7 @@ static void hps_worker_process_init(int inum) {
   //   }
 
   //如下这些代码参照官方nginx里的ngx_event_process_init()函数中的代码
-  //   g_socket.ngx_epoll_init(); //初始化epoll相关内容，同时 往监听socket上增加监听事件，从而开始让监听端口履行其职责
-  // g_socket.ngx_epoll_listenportstart();//往监听socket上增加监听事件，从而开始让监听端口履行其职责【如果不加这行，虽然端口能连上，但不会触发ngx_epoll_process_events()里边的epoll_wait()往下走】
+  g_socket.hps_epoll_init(); // 初始化epoll
 
   // ... 待扩充
   return;
