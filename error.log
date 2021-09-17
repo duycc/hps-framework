@@ -1,4 +1,15 @@
-2021/09/18 00:02:51 [stderr] 10109: hpServer: CSocekt::Initialize()中bind()失败, i=0. (13: Permission denied) 
-2021/09/18 00:02:51 [stderr] 10109: hpServer: 程序退出，再见了！
-2021/09/18 00:03:10 [info] 10153: 监听80端口成功!
-2021/09/18 00:03:10 [info] 10153: 监听443端口成功!
+2021/09/18 00:27:03 [info] 12240: 监听80端口成功!
+2021/09/18 00:27:03 [info] 12240: 监听443端口成功!
+2021/09/18 00:27:03 [notice] 12240: master process ./hpServer 12240 【master】进程启动并执行......!
+2021/09/18 00:27:03 [notice] 12241: worker process 12241 【worker】进程启动并执行......!
+2021/09/18 00:28:08 [stderr] 12241: hpServer: ip信息为192.168.0.104:54664
+
+2021/09/18 00:28:17 [stderr] 12241: hpServer: 22222222222222222222222.
+2021/09/18 00:30:36 [notice] 12240: signal 17 (SIGCHLD) received from 12241
+2021/09/18 00:30:36 [alert] 12240: pid = 12241 exited on signal 9!
+2021/09/18 00:30:37 [stderr] 12240: hpServer: master 进程 12240 休息1秒
+2021/09/18 00:32:43 [info] 13028: 监听80端口成功!
+2021/09/18 00:32:43 [info] 13028: 监听443端口成功!
+2021/09/18 00:32:43 [notice] 13028: master process ./hpServer 13028 【master】进程启动并执行......!
+2021/09/18 00:32:43 [notice] 13031: worker process 13031 【worker】进程启动并执行......!
+2021/09/18 00:32:43 [notice] 13032: worker process 13032 【worker】进程启动并执行......!

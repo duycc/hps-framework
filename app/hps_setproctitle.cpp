@@ -17,14 +17,7 @@
   为了避免影戏环境变量，需要将环境变量位置移动
 */
 
-size_t g_argvneedmem = 0; // 启动参数内存大小
-size_t g_envneedmem = 0;  // 相关环境变量总大小
-char * gp_envmem = NULL;  // 环境变量内存新位置
-
 void hps_init_setproctitle() {
-  for (int i = 0; environ[i]; ++i) {
-    g_envneedmem += strlen(environ[i] + 1); // 字符串末尾的'\0'也需要计算
-  }
   gp_envmem = new char[g_envneedmem];
   memset(gp_envmem, 0, g_envneedmem);
 
@@ -43,9 +36,6 @@ void hps_setproctitle(const char *title) {
   // 2. 新进程名长度不能超过原始标题长度 + 原始环境变量
 
   size_t new_title_len = strlen(title);
-  for (int i = 0; g_os_argv[i]; ++i) {
-    g_argvneedmem += strlen(g_os_argv[i]) + 1;
-  }
 
   size_t total_len = g_argvneedmem + g_envneedmem; // argv + environ
   if (total_len <= new_title_len) {

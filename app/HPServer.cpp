@@ -17,8 +17,11 @@
 #include "hps_func.h"   // 函数声明
 #include "hps_macro.h"
 
-char **g_os_argv = NULL; // 原始命令行参数数组
-int    g_os_argc;        // 启动参数个数
+char **g_os_argv = NULL;  // 原始命令行参数数组
+int    g_os_argc;         // 启动参数个数
+size_t g_argvneedmem = 0; // 启动参数内存大小
+size_t g_envneedmem = 0;  // 相关环境变量总大小
+char * gp_envmem = NULL;  // 环境变量内存新位置
 
 pid_t hps_pid;          // 当前进程 id
 pid_t hps_parent;       // 当前进程父进程 id
@@ -38,6 +41,13 @@ int main(int argc, char *const *argv) {
 
   hps_pid = getpid();
   hps_parent = getppid();
+
+  for (int i = 0; i < argc; ++i) {
+    g_argvneedmem += strlen(argv[i] + 1);
+  }
+  for (int i = 0; environ[i]; ++i) {
+    g_envneedmem += strlen(environ[i]) + 1;
+  }
 
   g_os_argc = argc;
   g_os_argv = (char **)argv;
