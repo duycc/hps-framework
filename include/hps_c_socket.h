@@ -9,9 +9,12 @@
 #if !defined(__HPS_C_SOCKET_H__)
 #define __HPS_C_SOCKET_H__
 
+#include <list>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <vector>
+
+#include "hps_comm.h"
 
 #define HPS_LISTEN_BACKLOG 511 // 已完成连接队列最大值
 #define HPS_MAX_EVENTS 512     // epoll_wait 一次最多接收事件数量
@@ -44,8 +47,24 @@ struct hps_connection_s {
   ngx_event_handler_pt rhandler; // 读事件处理
   ngx_event_handler_pt whandler; // 写事件处理
 
+  // 收包相关信息
+  unsigned char curStat;                      // 当前收包状态
+  char          dataHeadInfo[_DATA_BUFSIZE_]; // 存放包头信息
+
+  char *       precvbuf; // 接收缓冲区的头指针
+  unsigned int irecvlen; // 需要接受多少数据
+
+  bool  ifnewrecvMem;
+  char *pnewMemPointer;
+
   lphps_connection_t data; // 后继指针，指向下一个本类型对象，用于把"空闲"的连接池对象构成一个单向链表，方便取用
 };
+
+// 消息头
+typedef struct _STRUC_MSG_HEADER {
+  lphps_connection_t pConn;         // 记录对应的连接
+  uint64_t           iCurrsequence; // 收到数据包时记录对应连接的序号，过滤过期包
+} STRUC_MSG_HEADER, *LPSTRUC_MSG_HEADER;
 
 // Socket 相关类
 class CSocekt {
@@ -72,8 +91,15 @@ private:
   // 业务处理函数
   void hps_event_accept(lphps_connection_t oldc);      // 建立新连接
   void hps_wait_request_handler(lphps_connection_t c); // 来数据时的读处理函数
+  void hps_close_connection(lphps_connection_t c);     // 关闭连接，释放资源
 
-  void hps_close_accepted_connection(lphps_connection_t c); // 关闭连接，释放资源
+  ssize_t recvproc(lphps_connection_t c, char *buff, ssize_t buflen); // 接收从客户端来的数据
+  void    hps_wait_request_handler_proc_p1(lphps_connection_t c);     // 包头收完整后的处理
+  void    hps_wait_request_handler_proc_plast(lphps_connection_t c);  // 收到一个完整包后的处理
+
+  void inMsgRecvQueue(char *buf); // 收到一个完整消息后，入消息队列
+  void tmpoutMsgRecvQueue();      // 临时清除对列中消息函数，测试用
+  void clearMsgRecvQueue();       // 清理接收消息队列
 
   // 获取对端信息
   size_t hps_sock_ntop(struct sockaddr *sa, int port, u_char *text, size_t len);
@@ -93,8 +119,12 @@ private:
   int m_connection_n;      // 连接池大小
   int m_free_connection_n; // 空闲连接数量
 
-  std::vector<lphps_listening_t> m_ListenSocketList; // 监听套接字队列
+  std::vector<lphps_listening_t> m_ListenSocketList;       // 监听套接字队列
+  struct epoll_event             m_events[HPS_MAX_EVENTS]; // 存储 epoll_wait() 返回的事件
 
-  struct epoll_event m_events[HPS_MAX_EVENTS]; // 存储 epoll_wait() 返回的事件
+  // 网络通讯相关变量
+  size_t            m_iLenPkgHeader; // sizeof(COMM_PKG_HEADER);
+  size_t            m_iLenMsgHeader; // sizeof(STRUC_MSG_HEADER);
+  std::list<char *> m_MsgRecvQueue;  // 接收数据消息队列
 };
 #endif // __HPS_C_SOCKET_H__

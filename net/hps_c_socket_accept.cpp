@@ -91,7 +91,7 @@ void CSocekt::hps_event_accept(lphps_connection_t oldc) {
 
     if (!use_accept4) {
       if (setnonblocking(s) == false) {
-        hps_close_accepted_connection(newc);
+        hps_close_connection(newc);
         return;
       }
     }
@@ -105,7 +105,7 @@ void CSocekt::hps_event_accept(lphps_connection_t oldc) {
                             0, // EPOLLET   ET模式
                                // 0         LT模式
                             EPOLL_CTL_ADD, newc) == -1) {
-      hps_close_accepted_connection(newc);
+      hps_close_connection(newc);
       return;
     }
     break;
@@ -114,13 +114,4 @@ void CSocekt::hps_event_accept(lphps_connection_t oldc) {
   return;
 }
 
-// 当 accept 成功，后续流程失败时，需要回收这个 socket
-void CSocekt::hps_close_accepted_connection(lphps_connection_t c) {
-  int fd = c->fd;
-  hps_free_connection(c);
-  c->fd = -1;
-  if (close(fd) == -1) {
-    hps_log_error_core(HPS_LOG_ALERT, errno, "CSocekt::hps_close_accepted_connection()中close(%d)失败!", fd);
-  }
-  return;
-}
+

@@ -33,6 +33,9 @@ CSocekt::CSocekt() {
   m_pconnections = NULL;
   m_pfree_connections = NULL;
 
+  m_iLenPkgHeader = sizeof(COMM_PKG_HEADER);
+  m_iLenMsgHeader = sizeof(STRUC_MSG_HEADER);
+
   return;
 }
 

@@ -13,7 +13,8 @@
 #include <unistd.h>
 
 #include "hps_c_conf.h" // 配置文件处理
-#include "hps_func.h"   // 函数声明
+#include "hps_c_memory.h"
+#include "hps_func.h" // 函数声明
 #include "hps_macro.h"
 
 char **g_os_argv = NULL;  // 原始命令行参数数组
@@ -59,10 +60,14 @@ int main(int argc, char *const *argv) {
     // 加载配置文件
     CConfig *p_config = CConfig::GetInstance();
     if (p_config->Load("HPServer.conf") == false) {
+      hps_log_init();
       hps_log_stderr(0, "配置文件[%s]载入失败，退出！", "HPServer.conf");
       exit_code = 2;
       break;
     }
+
+    // 初始化内存分配函数
+    CMemory::GetInstance();
 
     // 初始化日志
     hps_log_init();
