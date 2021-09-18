@@ -1,9 +1,10 @@
-﻿/**
- * @file     hps_setproctitle.cpp
- * @brief
- * @author   YongDu
- * @date     2021-09-12
- */
+﻿//===--------------------------- app/hps_setproctitle.cpp - HP-Server -----------------------------------*- C++ -*-===//
+// brief :
+//   Set process title
+//
+// author: YongDu
+// date  : 2021-09-18
+//===--------------------------------------------------------------------------------------------------------------===//
 
 #include <stdio.h>
 #include <stdlib.h>

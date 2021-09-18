@@ -1,9 +1,10 @@
-/**
- * @file     hps_c_socket_accept.cpp
- * @brief
- * @author   YongDu
- * @date     2021-09-17
- */
+//===--------------------------- net/hps_c_socket_accept.cpp - [HP-Server] ------------------------------*- C++ -*-===//
+// brief :
+//   Process the newly connected TCP
+//
+// author: YongDu
+// date  : 2021-09-17
+//===--------------------------------------------------------------------------------------------------------------===//
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -23,8 +24,6 @@
 #include "hps_func.h"
 #include "hps_global.h"
 #include "hps_macro.h"
-
-//===----------------------------- 处理新连入的 TCP 连接 ------------------------------===//
 
 // 新连接连入处理函数
 void CSocekt::hps_event_accept(lphps_connection_t oldc) {
@@ -102,7 +101,10 @@ void CSocekt::hps_event_accept(lphps_connection_t oldc) {
     newc->rhandler = &CSocekt::hps_wait_request_handler; // 数据来时的读处理函数
 
     // 将读事件加入epoll监控
-    if (hps_epoll_add_event(s, 1, 0, EPOLLET, EPOLL_CTL_ADD, newc) == -1) {
+    if (hps_epoll_add_event(s, 1, 0,
+                            0, // EPOLLET   ET模式
+                               // 0         LT模式
+                            EPOLL_CTL_ADD, newc) == -1) {
       hps_close_accepted_connection(newc);
       return;
     }

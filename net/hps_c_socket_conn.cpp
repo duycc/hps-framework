@@ -1,9 +1,10 @@
-/**
- * @file     hps_c_socket_conn.cpp
- * @brief
- * @author   YongDu
- * @date     2021-09-16
- */
+//===--------------------------- net/hps_c_socket_conn.cpp - [HP-Server] --------------------------------*- C++ -*-===//
+// brief :
+//
+//
+// author: YongDu
+// date  : 2021-09-16
+//===--------------------------------------------------------------------------------------------------------------===//
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -23,8 +24,6 @@
 #include "hps_func.h"
 #include "hps_global.h"
 #include "hps_macro.h"
-
-//===----------------------------- 连接池相关 ------------------------------===//
 
 // 连接池中获取一个空闲连接
 lphps_connection_t CSocekt::hps_get_connection(int isock) {

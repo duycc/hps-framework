@@ -1,9 +1,10 @@
-﻿/**
- * @file     hps_global.h
- * @brief
- * @author   YongDu
- * @date     2021-09-12
- */
+﻿//===--------------------------- include/hps_global.h - HP-Server ---------------------------------------*- C++ -*-===//
+// brief :
+//   Global variables
+//
+// author: YongDu
+// date  : 2021-09-12
+//===--------------------------------------------------------------------------------------------------------------===//
 
 #if !defined(__HPS_GLOBAL_H__)
 #define __HPS_GLOBAL_H__

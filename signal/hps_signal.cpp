@@ -1,9 +1,10 @@
-﻿/**
- * @file     hps_signal.cpp
- * @brief
- * @author   YongDu
- * @date     2021-09-13
- */
+﻿//===--------------------------- signal/hps_signal.cpp - [HP-Server] ------------------------------------*- C++ -*-===//
+// brief :
+//   Signal correlation
+//
+// author: YongDu
+// date  : 2021-09-13
+//===--------------------------------------------------------------------------------------------------------------===//
 
 #include <errno.h>
 #include <signal.h>

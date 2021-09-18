@@ -1,14 +1,13 @@
-/**
- * @file     hps_c_socket.h
- * @brief
- * @author   YongDu
- * @date     2021-09-16
- */
+//===--------------------------- include/hps_c_socket.h - HP-Server -------------------------------------*- C++ -*-===//
+// brief :
+//   Socket related operations
+//
+// author: YongDu
+// date  : 2021-09-16
+//===--------------------------------------------------------------------------------------------------------------===//
 
 #if !defined(__HPS_C_SOCKET_H__)
 #define __HPS_C_SOCKET_H__
-
-//===----------------------------- Socket相关操作 ------------------------------===//
 
 #include <sys/epoll.h>
 #include <sys/socket.h>

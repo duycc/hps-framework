@@ -1,9 +1,10 @@
-﻿/**
- * @file     hps_c_conf.cpp
- * @brief
- * @author   YongDu
- * @date     2021-09-12
- */
+﻿//===--------------------------- app/hps_c_conf.cpp - HP-Server -----------------------------------------*- C++ -*-===//
+// brief :
+//   Read configuration file
+//
+// author: YongDu
+// date  : 2021-09-12
+//===--------------------------------------------------------------------------------------------------------------===//
 
 #include <stdio.h>
 #include <stdlib.h>

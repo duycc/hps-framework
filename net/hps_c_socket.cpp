@@ -1,9 +1,10 @@
-/**
- * @file     hps_c_socket.cpp
- * @brief
- * @author   YongDu
- * @date     2021-09-16
- */
+//===--------------------------- net/hps_c_socket.cpp - [HP-Server] -------------------------------------*- C++ -*-===//
+// brief :
+//
+//
+// author: YongDu
+// date  : 2021-09-18
+//===--------------------------------------------------------------------------------------------------------------===//
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -294,13 +295,13 @@ int CSocekt::hps_epoll_process_events(int timer) {
     if (c->instance != instance) {
       //===----------------------------- 过滤过期事件 ------------------------------===//
       //  a. 处理第一个事件时，因为业务需要，把这个连接关闭，同时设置c->fd = -1，
-      //     并且调用ngx_free_connection将该连接归还给连接池；
-      //  b. 处理第二个事件，恰好第二个事件是建立新连接事件，调用ngx_get_connection从连接池中取出的连接
+      //     并且调用hps_free_connection将该连接归还给连接池；
+      //  b. 处理第二个事件，恰好第二个事件是建立新连接事件，调用hps_get_connection从连接池中取出的连接
       //     可能就是刚刚释放的第一个事件对应的连接池中的连接，又因为a中套接字被释放了，所以会被操作系统拿来复用
       //     复用给了b；
       //  c. 当处理第三个事件时，第三个事件其实是已经过期的，应该不处理。
       //
-      //  解决：当调用ngx_get_connection从连接池中获取一个新连接时，将instance标志位置反，所以这个条件如果不成立，
+      //  解决：当调用hps_get_connection从连接池中获取一个新连接时，将instance标志位置反，所以这个条件如果不成立，
       //    说明这个连接已经被挪作他用
 
       hps_log_error_core(HPS_LOG_DEBUG, 0, "CSocekt::hps_epoll_process_events()中遇到了instance值改变的过期事件:%p.",

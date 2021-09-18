@@ -1,11 +1,10 @@
-﻿/**
- * @file     HPServer.cpp
- * @brief
- * @author   YongDu
- * @date     2021-09-12
- */
-
-// 程序入口函数
+﻿//===--------------------------- app/HPServer.cpp - HP-Server -------------------------------------------*- C++ -*-===//
+// brief :
+//   Program entry function
+//
+// author: YongDu
+// date  : 2021-09-12
+//===--------------------------------------------------------------------------------------------------------------===//
 
 #include <signal.h>
 #include <stdio.h>
@@ -79,7 +78,7 @@ int main(int argc, char *const *argv) {
       break;
     }
 
-    hps_init_setproctitle(); //把环境变量搬家
+    hps_init_setproctitle(); // 移动环境变量
 
     // 创建守护进程
     if (p_config->GetIntDefault("Daemon", 0) == 1) {

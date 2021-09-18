@@ -1,9 +1,10 @@
-/**
- * @file     hps_macro.h
- * @brief
- * @author   YongDu
- * @date     2021-09-12
- */
+//===--------------------------- include/hps_macro.h - [HP-Server] --------------------------------------*- C++ -*-===//
+// brief :
+//   Some Macro Definition
+//
+// author: YongDu
+// date  : 2021-09-12
+//===--------------------------------------------------------------------------------------------------------------===//
 
 #if !defined(__HPS_MACRO_H__)
 #define __HPS_MACRO_H__

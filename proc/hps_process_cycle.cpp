@@ -1,11 +1,10 @@
-/**
- * @file     hps_process_cycle.cpp
- * @brief
- * @author   YongDu
- * @date     2021-09-14
- */
-
-//===----------------------------- 进程处理相关 ------------------------------===//
+//===--------------------------- proc/hps_process_cycle.cpp - [HP-Server] -------------------------------*- C++ -*-===//
+// brief :
+//   Process related
+//
+// author: YongDu
+// date  : 2021-09-14
+//===--------------------------------------------------------------------------------------------------------------===//
 
 #include <errno.h>
 #include <signal.h>
@@ -54,10 +53,10 @@ void hps_master_process_cycle() {
   if (size < 1000) {
     char title[1000] = {0};
     strcpy(title, (const char *)master_process);
-    strcat(title, " ");
-    for (int i = 0; i < g_os_argc; ++i) {
-      strcat(title, g_os_argv[i]);
-    }
+    // strcat(title, " ");
+    // for (int i = 0; i < g_os_argc; ++i) {
+    //   strcat(title, g_os_argv[i]);
+    // }
     hps_setproctitle(title);
     hps_log_error_core(HPS_LOG_NOTICE, 0, "%s %P 【master】进程启动并执行......!", title, hps_pid);
   }
@@ -146,7 +145,7 @@ static void hps_worker_process_cycle(int inum, const char *pprocname) {
 
   for (;;) {
     // hps_log_error_core(0, 0, "worker process %d pid = %P", inum, hps_pid);
-    sleep(1);
+    // sleep(1);
 
     hps_process_events_and_timers(); // 处理网络事件和定时器事件
 
