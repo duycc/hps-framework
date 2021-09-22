@@ -1,10 +1,10 @@
 ﻿# 通用编译规则
 
 ifeq ($(DEBUG),true)
-CC = g++ -g
+CC = g++ -std=c++11 -g
 VERSION = debug
 else
-CC = g++
+CC = g++ -std=c++11
 VERSION = release
 endif
 
@@ -37,7 +37,7 @@ endif
 
 $(BIN):$(LINK_OBJ)
 	@echo "------------------------build $(VERSION) mode--------------------------------!!!"
-	$(CC) -o $@ $^
+	$(CC) -o $@ $^ -lpthread
 
 $(LINK_OBJ_DIR)/%.o:%.cpp
 	$(CC) -I$(INCLUDE_PATH) -o $@ -c $(filter %.cpp,$^)

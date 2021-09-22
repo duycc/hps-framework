@@ -82,12 +82,12 @@ void CSocekt::hps_event_accept(lphps_connection_t oldc) {
     }
     // 成功获取到连接
     memcpy(&newc->s_sockaddr, &mysockaddr, socklen);
-    {
-      u_char ipaddr[100];
-      memset(ipaddr, 0, sizeof(ipaddr));
-      hps_sock_ntop(&newc->s_sockaddr, 1, ipaddr, sizeof(ipaddr) - 10);
-      hps_log_stderr(0, "ip信息为%s\n", ipaddr);
-    }
+    // {
+    //   u_char ipaddr[100];
+    //   memset(ipaddr, 0, sizeof(ipaddr));
+    //   hps_sock_ntop(&newc->s_sockaddr, 1, ipaddr, sizeof(ipaddr) - 10);
+    //   hps_log_stderr(0, "ip信息为%s\n", ipaddr);
+    // }
 
     if (!use_accept4) {
       if (setnonblocking(s) == false) {
@@ -113,5 +113,3 @@ void CSocekt::hps_event_accept(lphps_connection_t oldc) {
 
   return;
 }
-
-

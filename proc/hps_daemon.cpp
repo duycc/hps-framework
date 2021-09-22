@@ -38,6 +38,9 @@ int hps_daemon() {
     return 1;
   }
 
+  hps_parent = hps_pid;
+  hps_pid = getpid();
+
   if (setsid() == -1) {
     // 创建新会话，脱离终端
     hps_log_error_core(HPS_LOG_EMERG, errno, "hps_daemon()中setsid()失败!");

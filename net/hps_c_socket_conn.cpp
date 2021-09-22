@@ -20,6 +20,7 @@
 #include <unistd.h>
 
 #include "hps_c_conf.h"
+#include "hps_c_lockmutex.h"
 #include "hps_c_socket.h"
 #include "hps_func.h"
 #include "hps_global.h"

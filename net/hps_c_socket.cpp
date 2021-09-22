@@ -20,6 +20,8 @@
 #include <unistd.h>
 
 #include "hps_c_conf.h"
+#include "hps_c_lockmutex.h"
+#include "hps_c_memory.h"
 #include "hps_c_socket.h"
 #include "hps_func.h"
 #include "hps_global.h"
@@ -36,6 +38,8 @@ CSocekt::CSocekt() {
   m_iLenPkgHeader = sizeof(COMM_PKG_HEADER);
   m_iLenMsgHeader = sizeof(STRUC_MSG_HEADER);
 
+  m_iRecvMsgQueueCount = 0;
+  pthread_mutex_init(&m_recvMessageQueueMutex, NULL);
   return;
 }
 
@@ -45,9 +49,26 @@ CSocekt::~CSocekt() {
   }
   std::vector<lphps_listening_t>().swap(m_ListenSocketList);
 
-  if (m_pconnections != NULL) // 释放连接池
-    delete[] m_pconnections;  // 需要释放么？
+  if (m_pconnections != NULL) { // 释放连接池
+    delete[] m_pconnections;    // 需要释放么？
+  }
 
+  // 释放消息队列内存
+  clearMsgRecvQueue();
+
+  pthread_mutex_destroy(&m_recvMessageQueueMutex);
+  return;
+}
+
+void CSocekt::clearMsgRecvQueue() {
+  char *   sTmpMempoint;
+  CMemory *p_memory = CMemory::GetInstance();
+
+  while (!m_MsgRecvQueue.empty()) {
+    sTmpMempoint = m_MsgRecvQueue.front();
+    m_MsgRecvQueue.pop_front();
+    p_memory->FreeMemory(sTmpMempoint);
+  }
   return;
 }
 

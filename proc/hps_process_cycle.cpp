@@ -156,8 +156,7 @@ static void hps_worker_process_cycle(int inum, const char *pprocname) {
     }*/
   }
 
-  // 如果从这个循环跳出来
-  // g_threadpool.StopAll();      //考虑在这里停止线程池；
+  g_threadpool.StopAll();
   // g_socket.Shutdown_subproc(); // socket需要释放的东西考虑释放；
   return;
 }
@@ -172,15 +171,13 @@ static void hps_worker_process_init(int inum) {
     hps_log_error_core(HPS_LOG_ALERT, errno, "hps_worker_process_init()中sigprocmask()失败!");
   }
 
-  //线程池代码，率先创建，至少要比和socket相关的内容优先
-  //   CConfig *p_config = CConfig::GetInstance();
-  //   int      tmpthreadnums = p_config->GetIntDefault("ProcMsgRecvWorkThreadCount", 5);
-  //   //处理接收到的消息的线程池中线程数量 if (g_threadpool.Create(tmpthreadnums) == false) //创建线程池中线程
-  //   {
-  //     //内存没释放，但是简单粗暴退出；
-  //     exit(-2);
-  //   }
-  //   sleep(1);
+  // 线程池代码，率先创建
+  CConfig *p_config = CConfig::GetInstance();
+  int      tmpthreadnums = p_config->GetIntDefault("ProcMsgRecvWorkThreadCount", 5);
+  if (g_threadpool.Create(tmpthreadnums) == false) {
+    exit(-2);
+  }
+  sleep(1);
 
   //   if (g_socket.Initialize_subproc() == false) //初始化子进程需要具备的一些多线程能力相关的信息
   //   {
@@ -188,7 +185,6 @@ static void hps_worker_process_init(int inum) {
   //     exit(-2);
   //   }
 
-  //如下这些代码参照官方nginx里的ngx_event_process_init()函数中的代码
   g_socket.hps_epoll_init(); // 初始化epoll
 
   // ... 待扩充

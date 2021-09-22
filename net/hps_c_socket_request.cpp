@@ -8,12 +8,24 @@
 
 #include <arpa/inet.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <pthread.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
+#include <sys/time.h>
 #include <unistd.h>
 
+#include "hps_c_conf.h"
+#include "hps_c_lockmutex.h"
 #include "hps_c_memory.h"
 #include "hps_c_socket.h"
 #include "hps_func.h"
+#include "hps_global.h"
+#include "hps_macro.h"
 
 // 当连接上有数据来的时候，此函数会被hps_epoll_process_events()调用
 void CSocekt::hps_wait_request_handler(lphps_connection_t c) {
@@ -152,8 +164,10 @@ void CSocekt::hps_wait_request_handler_proc_p1(lphps_connection_t c) {
 
 // 收到一个完整包后的处理
 void CSocekt::hps_wait_request_handler_proc_plast(lphps_connection_t c) {
-  inMsgRecvQueue(c->pnewMemPointer);
-  // ... 业务逻辑，待扩充
+  int irmqc = 0;
+  inMsgRecvQueue(c->pnewMemPointer, irmqc);
+  g_threadpool.Call(irmqc);
+
   c->ifnewrecvMem = false; // 内存交给消息队列管理
   c->pnewMemPointer = NULL;
 
@@ -165,23 +179,23 @@ void CSocekt::hps_wait_request_handler_proc_plast(lphps_connection_t c) {
 }
 
 // 完整包入消息队列
-void CSocekt::inMsgRecvQueue(char *buf) {
+void CSocekt::inMsgRecvQueue(char *buf, int &irmqc) {
+  CLock lock(&m_recvMessageQueueMutex); // 函数执行完毕自动释放锁
   m_MsgRecvQueue.push_back(buf);
-  tmpoutMsgRecvQueue();
-  hps_log_stderr(0, "非常好，收到了一个完整的数据包【包头+包体】！");
-}
-
-void CSocekt::tmpoutMsgRecvQueue() {
-  int size = m_MsgRecvQueue.size();
-  if (size < 1000) {
-    return;
-  }
-  CMemory *p_memory = CMemory::GetInstance();
-  int      cha = size - 500;
-  for (int i = 0; i < cha; ++i) {
-    char *sTmpMsgBuf = m_MsgRecvQueue.front();
-    m_MsgRecvQueue.pop_front();
-    p_memory->FreeMemory(sTmpMsgBuf);
-  }
+  ++m_iRecvMsgQueueCount;
+  irmqc = m_iRecvMsgQueueCount; // 当前消息队列大小
   return;
 }
+
+char *CSocekt::outMsgRecvQueue() {
+  CLock lock(&m_recvMessageQueueMutex);
+  if (m_MsgRecvQueue.empty()) {
+    return NULL;
+  }
+  char *sTmpMsgBuf = m_MsgRecvQueue.front();
+  m_MsgRecvQueue.pop_front();
+  --m_iRecvMsgQueueCount;
+  return sTmpMsgBuf;
+}
+
+void CSocekt::threadRecvProcFunc(char *pMsgBuf) { return; }

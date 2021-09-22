@@ -6,16 +6,21 @@
 // date  : 2021-09-12
 //===--------------------------------------------------------------------------------------------------------------===//
 
+#include <arpa/inet.h>
+#include <errno.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 #include "hps_c_conf.h" // 配置文件处理
 #include "hps_c_memory.h"
+#include "hps_c_socket.h"
 #include "hps_func.h" // 函数声明
 #include "hps_macro.h"
+#include "hps_c_threadpool.h"
 
 char **g_os_argv = NULL;  // 原始命令行参数数组
 int    g_os_argc;         // 启动参数个数
@@ -28,7 +33,8 @@ pid_t hps_parent;       // 当前进程父进程 id
 int   hps_process;      // 进程类型
 int   g_daemonized = 0; // 是否以守护进程方式运行
 
-CSocekt g_socket; // 全局 socket 管理
+CSocekt     g_socket;     // 全局 socket 管理
+CThreadPool g_threadpool; // 线程池
 
 sig_atomic_t hps_reap; // 标识子进程状态变化
 
