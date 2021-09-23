@@ -84,7 +84,6 @@ public:
                           lphps_connection_t c);
   int hps_epoll_process_events(int timer); // epoll等待接收和处理事件
 
-  char *       outMsgRecvQueue();                 // 出消息队列
   virtual void threadRecvProcFunc(char *pMsgBuf); // 处理客户端请求
 
 private:
@@ -102,15 +101,17 @@ private:
   void    hps_wait_request_handler_proc_p1(lphps_connection_t c);     // 包头收完整后的处理
   void    hps_wait_request_handler_proc_plast(lphps_connection_t c);  // 收到一个完整包后的处理
 
-  void inMsgRecvQueue(char *buf, int &irmqc); // 收到一个完整消息后，入消息队列
-  void clearMsgRecvQueue();                   // 清理接收消息队列
-
   // 获取对端信息
   size_t hps_sock_ntop(struct sockaddr *sa, int port, u_char *text, size_t len);
 
   // 连接池操作
   lphps_connection_t hps_get_connection(int isock);
   void               hps_free_connection(lphps_connection_t c);
+
+protected:
+  // 网络通讯相关变量
+  size_t m_iLenPkgHeader; // sizeof(COMM_PKG_HEADER);
+  size_t m_iLenMsgHeader; // sizeof(STRUC_MSG_HEADER);
 
 private:
   int m_worker_connections; // epoll最大连接数量
@@ -125,14 +126,5 @@ private:
 
   std::vector<lphps_listening_t> m_ListenSocketList;       // 监听套接字队列
   struct epoll_event             m_events[HPS_MAX_EVENTS]; // 存储 epoll_wait() 返回的事件
-
-  // 网络通讯相关变量
-  size_t m_iLenPkgHeader; // sizeof(COMM_PKG_HEADER);
-  size_t m_iLenMsgHeader; // sizeof(STRUC_MSG_HEADER);
-
-  // 消息队列
-  std::list<char *> m_MsgRecvQueue;          // 接收数据消息队列
-  int               m_iRecvMsgQueueCount;    // 消息队列大小
-  pthread_mutex_t   m_recvMessageQueueMutex; // 消息队列互斥量
 };
 #endif // __HPS_C_SOCKET_H__

@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <stdarg.h>
 
+#include "hps_c_threadpool.h"
 #include "hps_global.h"
 #include "hps_func.h"
 #include "hps_c_memory.h"
@@ -22,10 +23,12 @@ bool CThreadPool::m_shutdown = false;
 CThreadPool::CThreadPool() {
   m_iRunningThreadNum = 0;
   m_iLastEmgTime = 0;
+  m_iRecvMsgQueueCount = 0;
   return;
 }
 
 CThreadPool::~CThreadPool() {
+  clearMsgRecvQueue();
   return; // 资源释放在StopAll()里
 }
 
@@ -59,12 +62,40 @@ lblfor:
   return true;
 }
 
+void CThreadPool::inMsgRecvQueueAndSignal(char *buf) {
+  int err = pthread_mutex_lock(&m_pthreadMutex);
+  if (err != 0) {
+    hps_log_stderr(err, "CThreadPool::inMsgRecvQueueAndSignal()pthread_mutex_lock()失败，返回的错误码为%d!", err);
+  }
+
+  m_MsgRecvQueue.push_back(buf);
+  ++m_iRecvMsgQueueCount;
+
+  err = pthread_mutex_unlock(&m_pthreadMutex);
+  if (err != 0) {
+    hps_log_stderr(err, "CThreadPool::inMsgRecvQueueAndSignal()pthread_mutex_unlock()失败，返回的错误码为%d!", err);
+  }
+  Call(); // 唤醒一个线程
+  return;
+}
+
+void CThreadPool::clearMsgRecvQueue() {
+  char *   sTmpMempoint;
+  CMemory *p_memory = CMemory::GetInstance();
+
+  while (!m_MsgRecvQueue.empty()) {
+    sTmpMempoint = m_MsgRecvQueue.front();
+    m_MsgRecvQueue.pop_front();
+    p_memory->FreeMemory(sTmpMempoint);
+  }
+  return;
+}
+
 // 线程入口函数，当用pthread_create()创建线程后，ThreadFunc()函数立即执行
 void *CThreadPool::ThreadFunc(void *threadData) {
   ThreadItem * pThread = static_cast<ThreadItem *>(threadData);
   CThreadPool *pThreadPoolObj = pThread->_pThis;
 
-  char *   jobbuf = NULL;
   CMemory *p_memory = CMemory::GetInstance();
   int      err;
 
@@ -75,7 +106,7 @@ void *CThreadPool::ThreadFunc(void *threadData) {
       hps_log_stderr(err, "CThreadPool::ThreadFunc()pthread_mutex_lock()失败，返回的错误码为%d!", err);
 
     // 存在惊群现象，需使用while循环来处理逻辑
-    while ((jobbuf = g_socket.outMsgRecvQueue()) == NULL && m_shutdown == false) {
+    while (pThreadPoolObj->m_MsgRecvQueue.empty() && m_shutdown == false) {
       if (pThread->ifrunning == false) {
         pThread->ifrunning = true;
       }
@@ -83,24 +114,21 @@ void *CThreadPool::ThreadFunc(void *threadData) {
       pthread_cond_wait(&m_pthreadCond, &m_pthreadMutex);
     }
 
-    err = pthread_mutex_unlock(&m_pthreadMutex); // 解锁mutex
-    if (err != 0)
-      hps_log_stderr(err, "CThreadPool::ThreadFunc()pthread_mutex_unlock()失败，返回的错误码为%d!", err);
-
     if (m_shutdown) {
-      if (jobbuf != NULL) {
-        p_memory->FreeMemory(jobbuf);
-      }
+      pthread_mutex_unlock(&m_pthreadMutex);
       break;
     }
 
+    char *jobbuf = pThreadPoolObj->m_MsgRecvQueue.front();
+    pThreadPoolObj->m_MsgRecvQueue.pop_front();
+    --pThreadPoolObj->m_iRecvMsgQueueCount;
+
+    err = pthread_mutex_unlock(&m_pthreadMutex);
+    if (err != 0)
+      hps_log_stderr(err, "CThreadPool::ThreadFunc()pthread_mutex_unlock()失败，返回的错误码为%d!", err);
+
     ++pThreadPoolObj->m_iRunningThreadNum;
-
-    // g_socket.threadRecvProcFunc(jobbuf); // 处理消息队列中来的消息
-
-    hps_log_stderr(0, "执行开始---begin,tid=%ui!", tid);
-    sleep(5);
-    hps_log_stderr(0, "执行结束---end,tid=%ui!", tid);
+    g_socket.threadRecvProcFunc(jobbuf);
 
     p_memory->FreeMemory(jobbuf);
     --pThreadPoolObj->m_iRunningThreadNum;
@@ -140,7 +168,7 @@ void CThreadPool::StopAll() {
   return;
 }
 
-void CThreadPool::Call(int irmqc) {
+void CThreadPool::Call() {
   int err = pthread_cond_signal(&m_pthreadCond); // 唤醒一个阻塞在pthread_cond_wait()的线程
   if (err != 0) {
     hps_log_stderr(err, "CThreadPool::Call()中pthread_cond_signal()失败，返回的错误码为%d!", err);

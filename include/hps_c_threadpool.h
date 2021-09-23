@@ -12,6 +12,7 @@
 #include <atomic>
 #include <pthread.h>
 #include <vector>
+#include <list>
 
 // 线程池
 class CThreadPool {
@@ -21,7 +22,11 @@ public:
 
   bool Create(int threadNum); // 创建线程池
   void StopAll();             // 退出线程池中的所有线程
-  void Call(int irmqc);
+
+  void inMsgRecvQueueAndSignal(char *buf); // 收到一个完整消息后，入消息队列，并触发线程池中线程来处理该消息
+  void clearMsgRecvQueue();
+
+  void Call();
 
 private:
   static void *ThreadFunc(void *threadData); // 线程回调函数
@@ -47,6 +52,10 @@ private:
   time_t           m_iLastEmgTime;      // 上次线程不够使用的告警时间，防止日志太多
 
   std::vector<ThreadItem *> m_threadVector; // 线程容器
+
+  // 消息队列相关
+  std::list<char *> m_MsgRecvQueue;
+  int               m_iRecvMsgQueueCount;
 };
 
 #endif // __HPS_C_THREADPOOL_H__

@@ -21,6 +21,8 @@
 #include "hps_func.h" // 函数声明
 #include "hps_macro.h"
 #include "hps_c_threadpool.h"
+#include "hps_c_crc32.h"
+#include "hps_c_slogic.h"
 
 char **g_os_argv = NULL;  // 原始命令行参数数组
 int    g_os_argc;         // 启动参数个数
@@ -33,8 +35,8 @@ pid_t hps_parent;       // 当前进程父进程 id
 int   hps_process;      // 进程类型
 int   g_daemonized = 0; // 是否以守护进程方式运行
 
-CSocekt     g_socket;     // 全局 socket 管理
-CThreadPool g_threadpool; // 线程池
+CLogicSocket g_socket;     // 全局 socket 管理
+CThreadPool  g_threadpool; // 线程池
 
 sig_atomic_t hps_reap; // 标识子进程状态变化
 
@@ -74,6 +76,8 @@ int main(int argc, char *const *argv) {
 
     // 初始化内存分配函数
     CMemory::GetInstance();
+
+    CCRC32::GetInstance();
 
     // 初始化日志
     hps_log_init();

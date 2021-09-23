@@ -164,9 +164,7 @@ void CSocekt::hps_wait_request_handler_proc_p1(lphps_connection_t c) {
 
 // 收到一个完整包后的处理
 void CSocekt::hps_wait_request_handler_proc_plast(lphps_connection_t c) {
-  int irmqc = 0;
-  inMsgRecvQueue(c->pnewMemPointer, irmqc);
-  g_threadpool.Call(irmqc);
+  g_threadpool.inMsgRecvQueueAndSignal(c->pnewMemPointer);
 
   c->ifnewrecvMem = false; // 内存交给消息队列管理
   c->pnewMemPointer = NULL;
@@ -176,26 +174,6 @@ void CSocekt::hps_wait_request_handler_proc_plast(lphps_connection_t c) {
   c->precvbuf = c->dataHeadInfo;
   c->irecvlen = m_iLenPkgHeader;
   return;
-}
-
-// 完整包入消息队列
-void CSocekt::inMsgRecvQueue(char *buf, int &irmqc) {
-  CLock lock(&m_recvMessageQueueMutex); // 函数执行完毕自动释放锁
-  m_MsgRecvQueue.push_back(buf);
-  ++m_iRecvMsgQueueCount;
-  irmqc = m_iRecvMsgQueueCount; // 当前消息队列大小
-  return;
-}
-
-char *CSocekt::outMsgRecvQueue() {
-  CLock lock(&m_recvMessageQueueMutex);
-  if (m_MsgRecvQueue.empty()) {
-    return NULL;
-  }
-  char *sTmpMsgBuf = m_MsgRecvQueue.front();
-  m_MsgRecvQueue.pop_front();
-  --m_iRecvMsgQueueCount;
-  return sTmpMsgBuf;
 }
 
 void CSocekt::threadRecvProcFunc(char *pMsgBuf) { return; }

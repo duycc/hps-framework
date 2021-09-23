@@ -1,23 +1,10 @@
-2021/09/22 23:39:51 [info] 11468: 监听80端口成功!
-2021/09/22 23:39:51 [info] 11468: 监听443端口成功!
-2021/09/22 23:39:51 [notice] 11469: master process 11469 【master】进程启动并执行......!
-2021/09/22 23:39:51 [stderr] 11470: hpServer: CThreadPool::Create()创建线程-987232512成功,线程id=0
-2021/09/22 23:39:51 [stderr] 11470: hpServer: CThreadPool::Create()创建线程-995686656成功,线程id=0
-2021/09/22 23:39:52 [notice] 11470: worker process 11470 【worker】进程启动并执行......!
-2021/09/22 23:40:11 [stderr] 11470: hpServer: 执行开始---begin,tid=139954817074944!
-2021/09/22 23:40:11 [stderr] 11470: hpServer: 执行开始---begin,tid=139954808620800!
-2021/09/22 23:40:16 [stderr] 11470: hpServer: 执行结束---end,tid=139954817074944!
-2021/09/22 23:40:16 [stderr] 11470: hpServer: 执行结束---end,tid=139954808620800!
-2021/09/22 23:40:19 [stderr] 11470: hpServer: 执行开始---begin,tid=139954817074944!
-2021/09/22 23:40:19 [stderr] 11470: hpServer: 执行开始---begin,tid=139954808620800!
-2021/09/22 23:40:23 [stderr] 11470: hpServer: CThreadPool::Call()中发现线程池中当前空闲线程数量为0，要考虑扩容线程池了!
-2021/09/22 23:40:24 [stderr] 11470: hpServer: 执行结束---end,tid=139954817074944!
-2021/09/22 23:40:24 [stderr] 11470: hpServer: 执行结束---end,tid=139954808620800!
-2021/09/22 23:40:24 [stderr] 11470: hpServer: 执行开始---begin,tid=139954817074944!
-2021/09/22 23:40:24 [stderr] 11470: hpServer: 执行开始---begin,tid=139954808620800!
-2021/09/22 23:40:29 [stderr] 11470: hpServer: 执行结束---end,tid=139954808620800!
-2021/09/22 23:40:29 [stderr] 11470: hpServer: 执行结束---end,tid=139954817074944!
-2021/09/22 23:40:29 [stderr] 11470: hpServer: 执行开始---begin,tid=139954808620800!
-2021/09/22 23:40:29 [stderr] 11470: hpServer: 执行开始---begin,tid=139954817074944!
-2021/09/22 23:40:34 [stderr] 11470: hpServer: 执行结束---end,tid=139954808620800!
-2021/09/22 23:40:34 [stderr] 11470: hpServer: 执行结束---end,tid=139954817074944!
+2021/09/23 22:05:22 [info] 18165: 监听80端口成功!
+2021/09/23 22:05:22 [info] 18165: 监听443端口成功!
+2021/09/23 22:05:22 [notice] 18166: master process 18166 【master】进程启动并执行......!
+2021/09/23 22:05:22 [stderr] 18167: hpServer: CThreadPool::Create()创建线程-66582784成功,线程id=0
+2021/09/23 22:05:22 [stderr] 18167: hpServer: CThreadPool::Create()创建线程-75036928成功,线程id=0
+2021/09/23 22:05:23 [notice] 18167: worker process 18167 【worker】进程启动并执行......!
+2021/09/23 22:05:40 [stderr] 18167: hpServer: 执行了CLogicSocket::_HandleRegister()!
+2021/09/23 22:05:40 [stderr] 18167: hpServer: 执行了CLogicSocket::_HandleLogIn()!
+2021/09/23 22:05:45 [stderr] 18167: hpServer: 执行了CLogicSocket::_HandleRegister()!
+2021/09/23 22:05:45 [stderr] 18167: hpServer: 执行了CLogicSocket::_HandleLogIn()!
