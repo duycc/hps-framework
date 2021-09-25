@@ -133,7 +133,9 @@ bool CLogicSocket::_HandleRegister(lphps_connection_t pConn, LPSTRUC_MSG_HEADER 
   CMemory *         p_memory = CMemory::GetInstance();
   CCRC32 *          p_crc32 = CCRC32::GetInstance();
 
-  int   iSendLen = sizeof(STRUCT_REGISTER);
+  int iSendLen = sizeof(STRUCT_REGISTER);
+  iSendLen = 65000; // 测试
+
   char *p_sendbuf = (char *)p_memory->AllocMemory(m_iLenMsgHeader + m_iLenPkgHeader + iSendLen, false);
   memcpy(p_sendbuf, pMsgHeader, m_iLenMsgHeader);
 
@@ -146,7 +148,7 @@ bool CLogicSocket::_HandleRegister(lphps_connection_t pConn, LPSTRUC_MSG_HEADER 
   pPkgHeader->crc32 = p_crc32->Get_CRC((unsigned char *)p_sendInfo, iSendLen);
   pPkgHeader->crc32 = htonl(pPkgHeader->crc32);
 
-  // TODO:发送数据逻辑
+  this->sendMsg(p_sendbuf);
 
   hps_log_stderr(0, "执行了CLogicSocket::_HandleRegister()!");
   return true;

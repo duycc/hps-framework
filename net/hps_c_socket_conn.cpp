@@ -141,6 +141,122 @@ void CSocket::inRecyConnectQueue(lphps_connection_t pConn) {
   return;
 }
 
+void *CSocket::ServerSendQueueThread(void *threadData) {
+  ThreadItem *pThread = static_cast<ThreadItem *>(threadData);
+  CSocket *   pSocketObj = pThread->_pThis;
+  int         err;
+
+  std::list<char *>::iterator pos, pos2, posend;
+
+  char *             pMsgBuf;
+  LPSTRUC_MSG_HEADER pMsgHeader;
+  LPCOMM_PKG_HEADER  pPkgHeader;
+  lphps_connection_t p_Conn;
+  unsigned short     itmp;
+  ssize_t            sendsize;
+
+  CMemory *p_memory = CMemory::GetInstance();
+
+  while (g_stopEvent == 0) {
+    if (sem_wait(&pSocketObj->m_semEventSendQueue) == -1) {
+      if (errno != EINTR)
+        hps_log_stderr(errno, "CSocket::ServerSendQueueThread()中sem_wait(&pSocketObj->m_semEventSendQueue)失败.");
+    }
+
+    if (g_stopEvent != 0)
+      break;
+
+    if (pSocketObj->m_iSendMsgQueueCount > 0) {
+      err = pthread_mutex_lock(&pSocketObj->m_sendMessageQueueMutex);
+      if (err != 0)
+        hps_log_stderr(err, "CSocket::ServerSendQueueThread()中pthread_mutex_lock()失败，返回的错误码为%d!", err);
+
+      pos = pSocketObj->m_MsgSendQueue.begin();
+      posend = pSocketObj->m_MsgSendQueue.end();
+
+      while (pos != posend) {
+        pMsgBuf = (*pos);
+        pMsgHeader = (LPSTRUC_MSG_HEADER)pMsgBuf;
+        pPkgHeader = (LPCOMM_PKG_HEADER)(pMsgBuf + pSocketObj->m_iLenMsgHeader);
+        p_Conn = pMsgHeader->pConn;
+
+        // 过滤过期包
+        if (p_Conn->iCurrsequence != pMsgHeader->iCurrsequence) {
+          pos2 = pos;
+          pos++;
+          pSocketObj->m_MsgSendQueue.erase(pos2);
+          --pSocketObj->m_iSendMsgQueueCount;
+          p_memory->FreeMemory(pMsgBuf);
+          continue;
+        }
+
+        if (p_Conn->iThrowsendCount > 0) {
+          // 靠系统驱动来发送消息，此处不能再发送
+          pos++;
+          continue;
+        }
+
+        p_Conn->psendMemPointer = pMsgBuf;
+        pos2 = pos;
+        pos++;
+        pSocketObj->m_MsgSendQueue.erase(pos2);
+        --pSocketObj->m_iSendMsgQueueCount;
+        p_Conn->psendbuf = (char *)pPkgHeader;
+        itmp = ntohs(pPkgHeader->pkgLen);
+        p_Conn->isendlen = itmp;
+
+        hps_log_stderr(0, "即将发送数据%ud。", p_Conn->isendlen);
+
+        sendsize = pSocketObj->sendproc(p_Conn, p_Conn->psendbuf, p_Conn->isendlen);
+        if (sendsize > 0) {
+          if (sendsize == p_Conn->isendlen) {
+            p_memory->FreeMemory(p_Conn->psendMemPointer);
+            p_Conn->psendMemPointer = NULL;
+            p_Conn->iThrowsendCount = 0;
+            hps_log_stderr(0, "CSocket::ServerSendQueueThread()中数据发送完毕，很好。");
+          } else {
+
+            p_Conn->psendbuf = p_Conn->psendbuf + sendsize;
+            p_Conn->isendlen = p_Conn->isendlen - sendsize;
+
+            ++p_Conn->iThrowsendCount;
+            if (pSocketObj->hps_epoll_oper_event(p_Conn->fd, EPOLL_CTL_MOD, EPOLLOUT, 0, p_Conn) == -1) {
+              hps_log_stderr(errno, "CSocket::ServerSendQueueThread()hps_epoll_oper_event()失败.");
+            }
+
+            hps_log_stderr(
+                errno, "CSocket::ServerSendQueueThread()中数据没发送完毕【发送缓冲区满】，整个要发送%d，实际发送了%d。",
+                p_Conn->isendlen, sendsize);
+          }
+          continue;
+        } else if (sendsize == 0) {
+          p_memory->FreeMemory(p_Conn->psendMemPointer);
+          p_Conn->psendMemPointer = NULL;
+          p_Conn->iThrowsendCount = 0;
+          continue;
+        } else if (sendsize == -1) {
+          // 标记发送缓冲区满了，需要通过epoll事件来驱动消息的继续发送
+          ++p_Conn->iThrowsendCount;
+          if (pSocketObj->hps_epoll_oper_event(p_Conn->fd, EPOLL_CTL_MOD, EPOLLOUT, 0, p_Conn) == -1) {
+            hps_log_stderr(errno, "CSocket::ServerSendQueueThread()中hps_epoll_add_event()_2失败.");
+          }
+          continue;
+        } else {
+          p_memory->FreeMemory(p_Conn->psendMemPointer);
+          p_Conn->psendMemPointer = NULL;
+          p_Conn->iThrowsendCount = 0;
+          continue;
+        }
+      }
+
+      err = pthread_mutex_unlock(&pSocketObj->m_sendMessageQueueMutex);
+      if (err != 0)
+        hps_log_stderr(err, "CSocket::ServerSendQueueThread()pthread_mutex_unlock()失败，返回的错误码为%d!", err);
+    }
+  }
+  return (void *)0;
+}
+
 // 处理连接回收线程
 void *CSocket::ServerRecyConnectionThread(void *threadData) {
   ThreadItem *pThread = static_cast<ThreadItem *>(threadData);
@@ -171,6 +287,10 @@ void *CSocket::ServerRecyConnectionThread(void *threadData) {
         }
 
         // ... 一些判断，待扩展
+        if (p_Conn->iThrowsendCount != 0) {
+          hps_log_stderr(
+              0, "CSocekt::ServerRecyConnectionThread()中到释放时间却发现p_Conn.iThrowsendCount!=0，这个不该发生");
+        }
 
         --pSocketObj->m_totol_recyconnection_n;
         pSocketObj->m_recyconnectionList.erase(pos);

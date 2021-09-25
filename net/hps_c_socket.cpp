@@ -79,13 +79,25 @@ bool CSocket::Initialize_subproc() {
     return false;
   }
 
+  // 创建发送线程和回收线程
+  int         err;
+  ThreadItem *pSendQueue;
+  m_threadVector.push_back(pSendQueue = new ThreadItem(this));
+  err = pthread_create(&pSendQueue->_Handle, NULL, ServerSendQueueThread, pSendQueue);
+  if (err != 0) {
+    return false;
+  }
+
   ThreadItem *pRecyconn;
   m_threadVector.push_back(pRecyconn = new ThreadItem(this));
-  int err = pthread_create(&pRecyconn->_Handle, NULL, ServerRecyConnectionThread, pRecyconn);
+  err = pthread_create(&pRecyconn->_Handle, NULL, ServerRecyConnectionThread, pRecyconn);
   return err == 0;
 }
 
 void CSocket::Shutdown_subproc() {
+  if (sem_post(&m_semEventSendQueue) == -1) {
+    hps_log_stderr(0, "CSocekt::Shutdown_subproc()中sem_post(&m_semEventSendQueue)失败.");
+  }
   std::vector<ThreadItem *>::iterator iter;
   for (iter = m_threadVector.begin(); iter != m_threadVector.end(); iter++) {
     pthread_join((*iter)->_Handle, NULL);
@@ -220,7 +232,7 @@ int CSocket::hps_epoll_init() {
   for (pos = m_ListenSocketList.begin(); pos != m_ListenSocketList.end(); ++pos) {
     lphps_connection_t p_Conn = hps_get_connection((*pos)->fd);
     if (p_Conn == NULL) {
-      hps_log_stderr(errno, "CSocket::hps_epoll_init()中ngx_get_connection()失败.");
+      hps_log_stderr(errno, "CSocket::hps_epoll_init()中hps_get_connection()失败.");
       exit(2); // 直接结束程序
     }
     p_Conn->listening = (*pos);  // 连接对象 和监听对象关联，方便通过连接对象找监听对象
@@ -257,15 +269,24 @@ int CSocket::hps_epoll_oper_event(int      fd,        // socket
   memset(&ev, 0, sizeof(ev));
 
   if (eventtype == EPOLL_CTL_ADD) {
-    ev.data.ptr = (void *)pConn;
     ev.events = flag;
     pConn->events = flag;
   } else if (eventtype == EPOLL_CTL_MOD) {
-    // ... 待扩展
+    ev.events = pConn->events;
+    if (bcaction == 0) {
+      ev.events |= flag; // 增加标记
+    } else if (bcaction == 1) {
+      ev.events &= ~flag; // 去掉某个标记
+    } else {
+      ev.events = flag; // 覆盖
+    }
+    pConn->events = ev.events;
   } else {
     // ... 待扩展
     return 1;
   }
+
+  ev.data.ptr = (void *)pConn;
 
   if (epoll_ctl(m_epollhandle, eventtype, fd, &ev) == -1) {
     hps_log_stderr(errno, "CSocket::hps_epoll_oper_event()中epoll_ctl(%d,%ud,%ud,%d)失败.", fd, eventtype, flag,
@@ -315,27 +336,27 @@ int CSocket::hps_epoll_process_events(int timer) {
   // hps_log_stderr(errno,"惊群测试1:%d",events);
 
   // 收到事件
-  lphps_connection_t c;
+  lphps_connection_t p_Conn;
   // uintptr_t          instance;
   uint32_t revents;
 
   for (int i = 0; i < events; ++i) {
     // events 收集到的事件数量
-    c = (lphps_connection_t)(m_events[i].data.ptr); // hps_epoll_add_event()给进去的
-    // instance = (uintptr_t)c & 1;                            // 取出标志位
-    // c = (lphps_connection_t)((uintptr_t)c & (uintptr_t)~1); // 去除 instance 标志位，取 c 真正地址
+    p_Conn = (lphps_connection_t)(m_events[i].data.ptr); // hps_epoll_add_event()给进去的
+    // instance = (uintptr_t)p_Conn & 1;                            // 取出标志位
+    // p_Conn = (lphps_connection_t)((uintptr_t)p_Conn & (uintptr_t)~1); // 去除 instance 标志位，取 p_Conn 真正地址
 
-    // if (c->fd == -1) {
+    // if (p_Conn->fd == -1) {
     //   /* 过滤过期事件：
     //     用epoll_wait取得三个事件，处理第一个事件时，因为业务需要，需要把这个连接关闭，会把c->fd设置为-1；
     //     第二个事件照常处理；
     //     假如第三个事件，跟第一个事件对应的是同一个连接，那这个条件就会成立，这种事件，属于过期事件，不应该处理
     //   */
-    //   hps_log_error_core(HPS_LOG_DEBUG, 0, "CSocket::hps_epoll_process_events()中遇到了fd=-1的过期事件:%p.", c);
+    //   hps_log_error_core(HPS_LOG_DEBUG, 0, "CSocket::hps_epoll_process_events()中遇到了fd=-1的过期事件:%p.", p_Conn);
     //   continue;
     // }
 
-    // if (c->instance != instance) {
+    // if (p_Conn->instance != instance) {
     //   //===----------------------------- 过滤过期事件 ------------------------------===//
     //   //  a. 处理第一个事件时，因为业务需要，把这个连接关闭，同时设置c->fd = -1，
     //   //     并且调用hps_free_connection将该连接归还给连接池；
@@ -348,7 +369,7 @@ int CSocket::hps_epoll_process_events(int timer) {
     //   //    说明这个连接已经被挪作他用
 
     //   hps_log_error_core(HPS_LOG_DEBUG, 0, "CSocket::hps_epoll_process_events()中遇到了instance值改变的过期事件:%p.",
-    //                      c);
+    //                      p_Conn);
     //   continue;
     // }
 
@@ -359,12 +380,19 @@ int CSocket::hps_epoll_process_events(int timer) {
     //   revents |= EPOLLIN | EPOLLOUT;
     // }
     if (revents & EPOLLIN) {
-      (this->*(c->rhandler))(c);
+      (this->*(p_Conn->rhandler))(p_Conn);
     }
 
     if (revents & EPOLLOUT) {
-      // 写事件
-      // ... 待扩展
+      if (revents & (EPOLLERR | EPOLLHUP | EPOLLRDHUP)) {
+        // EPOLLERR：对应的连接发生错误                     8     = 1000
+        // EPOLLHUP：对应的连接被挂起                       16    = 0001 0000
+        // EPOLLRDHUP：表示TCP连接的远端关闭或者半关闭连接   8192   = 0010  0000   0000   0000
+        --p_Conn->iThrowsendCount;
+      } else {
+        // 数据没有发送完毕，由系统驱动来发送 CSocekt::hps_write_request_handler()
+        (this->*(p_Conn->whandler))(p_Conn);
+      }
     }
   }
   return 1;

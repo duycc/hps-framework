@@ -97,7 +97,8 @@ void CSocket::hps_event_accept(lphps_connection_t oldc) {
     }
 
     newc->listening = oldc->listening;                   // 关联到监听端口
-    newc->rhandler = &CSocket::hps_wait_request_handler; // 数据来时的读处理函数
+    newc->rhandler = &CSocket::hps_read_request_handler; // 数据来时的读处理函数
+    newc->whandler = &CSocket::hps_write_request_handler;
 
     // 将读事件加入epoll监控
     if (hps_epoll_oper_event(s, EPOLL_CTL_ADD, EPOLLIN | EPOLLRDHUP, 0, newc) == -1) {

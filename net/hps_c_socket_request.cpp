@@ -28,7 +28,7 @@
 #include "hps_macro.h"
 
 // 当连接上有数据来的时候，此函数会被hps_epoll_process_events()调用
-void CSocket::hps_wait_request_handler(lphps_connection_t c) {
+void CSocket::hps_read_request_handler(lphps_connection_t c) {
   ssize_t reco = recvproc(c, c->precvbuf, c->irecvlen);
   if (reco <= 0) {
     return; // recvproc()函数已经释放资源，可直接return
@@ -203,6 +203,37 @@ ssize_t CSocket::sendproc(lphps_connection_t c, char *buff, ssize_t size) {
     }
   }
   return 0;
+}
+
+// epoll通知的可写事件
+void CSocket::hps_write_request_handler(lphps_connection_t pConn) {
+  CMemory *p_memory = CMemory::GetInstance();
+
+  ssize_t sendsize = sendproc(pConn, pConn->psendbuf, pConn->isendlen);
+
+  if (sendsize > 0 && sendsize != pConn->isendlen) {
+    pConn->psendbuf = pConn->psendbuf + sendsize;
+    pConn->isendlen = pConn->isendlen - sendsize;
+    return;
+  } else if (sendsize == -1) {
+    hps_log_stderr(errno, "CSocekt::hps_write_request_handler()时if(sendsize == -1)成立，这很怪异。");
+    return;
+  }
+
+  if (sendsize > 0 && sendsize == pConn->isendlen) {
+    if (hps_epoll_oper_event(pConn->fd, EPOLL_CTL_MOD, EPOLLOUT, 1, pConn) == -1) {
+      hps_log_stderr(errno, "CSocekt::hps_write_request_handler()中hps_epoll_oper_event()失败。");
+    }
+    hps_log_stderr(0, "CSocekt::hps_write_request_handler()中数据发送完毕，很好。");
+  }
+
+  if (sem_post(&m_semEventSendQueue) == -1)
+    hps_log_stderr(0, "CSocekt::hps_write_request_handler()中sem_post(&m_semEventSendQueue)失败.");
+
+  p_memory->FreeMemory(pConn->psendMemPointer);
+  pConn->psendMemPointer = NULL;
+  --pConn->iThrowsendCount;
+  return;
 }
 
 void CSocket::threadRecvProcFunc(char *pMsgBuf) { return; }

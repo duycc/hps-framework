@@ -26,7 +26,7 @@ typedef struct hps_listening_s  hps_listening_t, *lphps_listening_t;
 typedef struct hps_connection_s hps_connection_t, *lphps_connection_t;
 typedef class CSocket           CSocket;
 
-typedef void (CSocket::*ngx_event_handler_pt)(lphps_connection_t c);
+typedef void (CSocket::*hps_event_handler_pt)(lphps_connection_t c);
 
 // 监听端口信息
 struct hps_listening_s {
@@ -49,8 +49,8 @@ struct hps_connection_s {
   uint64_t        iCurrsequence; // 每次分配出去时+1，一定程度上检测错包废包
   struct sockaddr s_sockaddr;    // 保存对方地址信息
 
-  ngx_event_handler_pt rhandler; // 读事件处理
-  ngx_event_handler_pt whandler; // 写事件处理
+  hps_event_handler_pt rhandler; // 读事件处理
+  hps_event_handler_pt whandler; // 写事件处理
 
   uint32_t events; // epoll事件相关
 
@@ -111,9 +111,10 @@ private:
   bool setnonblocking(int sockfd);    // 套接字设置非阻塞
 
   // 业务处理函数
-  void hps_event_accept(lphps_connection_t oldc);      // 建立新连接
-  void hps_wait_request_handler(lphps_connection_t c); // 来数据时的读处理函数
-  void hps_close_connection(lphps_connection_t c);     // 关闭连接，释放资源
+  void hps_event_accept(lphps_connection_t oldc);           // 建立新连接
+  void hps_read_request_handler(lphps_connection_t c);      // 来数据时的读处理函数
+  void hps_write_request_handler(lphps_connection_t pConn); // 数据发送时的写处理函数
+  void hps_close_connection(lphps_connection_t c);          // 关闭连接，释放资源
 
   ssize_t recvproc(lphps_connection_t c, char *buff, ssize_t buflen); // 接收从客户端来的数据
   void    hps_wait_request_handler_proc_p1(lphps_connection_t c);     // 包头收完整后的处理
@@ -135,6 +136,7 @@ private:
   // 收集待回收连接
   void inRecyConnectQueue(lphps_connection_t pConn);
 
+  static void *ServerSendQueueThread(void *threadData);      // 发送数据的线程
   static void *ServerRecyConnectionThread(void *threadData); // 回收连接的线程
 
 protected:
