@@ -26,7 +26,7 @@
 #include "hps_macro.h"
 
 // 新连接连入处理函数
-void CSocekt::hps_event_accept(lphps_connection_t oldc) {
+void CSocket::hps_event_accept(lphps_connection_t oldc) {
   // LT模式下，可以只 accept 一次，如果没有处理，事件还会继续通知，避免阻塞
   struct sockaddr    mysockaddr;
   socklen_t          socklen;
@@ -59,7 +59,7 @@ void CSocekt::hps_event_accept(lphps_connection_t oldc) {
       } else if (err == EMFILE || err == ENFILE) { // EMFILE: 进程的 fd 已使用完
         level = HPS_LOG_CRIT;
       }
-      hps_log_error_core(level, errno, "CSocekt::hps_event_accept()中accept4()失败!");
+      hps_log_error_core(level, errno, "CSocket::hps_event_accept()中accept4()失败!");
 
       if (use_accept4 && err == ENOSYS) { // 没有 accept4 函数，重新使用 accept 函数
         use_accept4 = 0;
@@ -76,7 +76,7 @@ void CSocekt::hps_event_accept(lphps_connection_t oldc) {
     newc = hps_get_connection(s);
     if (newc == NULL) {
       if (close(s) == -1) {
-        hps_log_error_core(HPS_LOG_ALERT, errno, "CSocekt::hps_event_accept()中close(%d)失败!", s);
+        hps_log_error_core(HPS_LOG_ALERT, errno, "CSocket::hps_event_accept()中close(%d)失败!", s);
       }
       return;
     }
@@ -97,19 +97,15 @@ void CSocekt::hps_event_accept(lphps_connection_t oldc) {
     }
 
     newc->listening = oldc->listening;                   // 关联到监听端口
-    newc->w_ready = 1;                                   // 标记可写
-    newc->rhandler = &CSocekt::hps_wait_request_handler; // 数据来时的读处理函数
+    newc->rhandler = &CSocket::hps_wait_request_handler; // 数据来时的读处理函数
 
     // 将读事件加入epoll监控
-    if (hps_epoll_add_event(s, 1, 0,
-                            0, // EPOLLET   ET模式
-                               // 0         LT模式
-                            EPOLL_CTL_ADD, newc) == -1) {
+    if (hps_epoll_oper_event(s, EPOLL_CTL_ADD, EPOLLIN | EPOLLRDHUP, 0, newc) == -1) {
+      // 可以立即回收这个连接，无需延迟，因为其上还没有数据收发
       hps_close_connection(newc);
       return;
     }
     break;
   } while (1);
-
   return;
 }

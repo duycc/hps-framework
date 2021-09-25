@@ -1,10 +1,12 @@
-2021/09/23 22:05:22 [info] 18165: 监听80端口成功!
-2021/09/23 22:05:22 [info] 18165: 监听443端口成功!
-2021/09/23 22:05:22 [notice] 18166: master process 18166 【master】进程启动并执行......!
-2021/09/23 22:05:22 [stderr] 18167: hpServer: CThreadPool::Create()创建线程-66582784成功,线程id=0
-2021/09/23 22:05:22 [stderr] 18167: hpServer: CThreadPool::Create()创建线程-75036928成功,线程id=0
-2021/09/23 22:05:23 [notice] 18167: worker process 18167 【worker】进程启动并执行......!
-2021/09/23 22:05:40 [stderr] 18167: hpServer: 执行了CLogicSocket::_HandleRegister()!
-2021/09/23 22:05:40 [stderr] 18167: hpServer: 执行了CLogicSocket::_HandleLogIn()!
-2021/09/23 22:05:45 [stderr] 18167: hpServer: 执行了CLogicSocket::_HandleRegister()!
-2021/09/23 22:05:45 [stderr] 18167: hpServer: 执行了CLogicSocket::_HandleLogIn()!
+2021/09/25 12:06:42 [info] 8982: 监听80端口成功!
+2021/09/25 12:06:42 [info] 8982: 监听443端口成功!
+2021/09/25 12:06:42 [notice] 8983: master process 8983 【master】进程启动并执行......!
+2021/09/25 12:06:42 [stderr] 8984: hpServer: CThreadPool::Create()创建线程-196606208成功,线程id=0
+2021/09/25 12:06:42 [stderr] 8984: hpServer: CThreadPool::Create()创建线程-205060352成功,线程id=0
+2021/09/25 12:06:43 [notice] 8984: worker process 8984 【worker】进程启动并执行......!
+2021/09/25 12:07:09 [stderr] 8984: hpServer: 执行了CLogicSocket::_HandleLogIn()!
+2021/09/25 12:07:09 [stderr] 8984: hpServer: 执行了CLogicSocket::_HandleRegister()!
+2021/09/25 12:07:13 [stderr] 8984: hpServer: 执行了CLogicSocket::_HandleRegister()!
+2021/09/25 12:07:13 [stderr] 8984: hpServer: 执行了CLogicSocket::_HandleLogIn()!
+2021/09/25 12:07:32 [stderr] 8984: hpServer: CSocket::inRecyConnectQueue()执行，连接入到回收队列中.
+2021/09/25 12:08:52 [stderr] 8984: hpServer: CSocket::ServerRecyConnectionThread()执行，连接7被归还.

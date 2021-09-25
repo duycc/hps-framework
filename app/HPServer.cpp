@@ -34,6 +34,7 @@ pid_t hps_pid;          // 当前进程 id
 pid_t hps_parent;       // 当前进程父进程 id
 int   hps_process;      // 进程类型
 int   g_daemonized = 0; // 是否以守护进程方式运行
+int   g_stopEvent;
 
 CLogicSocket g_socket;     // 全局 socket 管理
 CThreadPool  g_threadpool; // 线程池
@@ -46,6 +47,8 @@ int main(int argc, char *const *argv) {
   int exit_code = 0; // 0     正常退出
                      // 1, -1 异常退出
                      // 2     系统找不到指定文件
+
+  g_stopEvent = 0;
 
   hps_pid = getpid();
   hps_parent = getppid();

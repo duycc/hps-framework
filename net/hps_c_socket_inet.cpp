@@ -34,7 +34,7 @@
  * @param len
  * @return size_t 信息字符串长度
  */
-size_t CSocekt::hps_sock_ntop(struct sockaddr *sa, int port, u_char *text, size_t len) {
+size_t CSocket::hps_sock_ntop(struct sockaddr *sa, int port, u_char *text, size_t len) {
   struct sockaddr_in *sin;
   u_char *            p;
 

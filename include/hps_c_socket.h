@@ -15,6 +15,7 @@
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <vector>
+#include <semaphore.h>
 
 #include "hps_comm.h"
 
@@ -23,9 +24,9 @@
 
 typedef struct hps_listening_s  hps_listening_t, *lphps_listening_t;
 typedef struct hps_connection_s hps_connection_t, *lphps_connection_t;
-typedef class CSocekt           CSocekt;
+typedef class CSocket           CSocket;
 
-typedef void (CSocekt::*ngx_event_handler_pt)(lphps_connection_t c);
+typedef void (CSocket::*ngx_event_handler_pt)(lphps_connection_t c);
 
 // 监听端口信息
 struct hps_listening_s {
@@ -37,29 +38,40 @@ struct hps_listening_s {
 
 // 一条 TCP 连接信息
 struct hps_connection_s {
-  int               fd;
-  lphps_listening_t listening;     // 对应的监听端口信息
-  unsigned          instance : 1;  // 失效标志位: 0 有效 1 失效
-  uint64_t          iCurrsequence; // 每次分配出去时+1，一定程度上检测错包废包
-  struct sockaddr   s_sockaddr;    // 保存对方地址信息
+  hps_connection_s();
+  virtual ~hps_connection_s();
+  void getOneToUse();
+  void putOneToFree();
 
-  uint8_t r_ready; // 读准备好标记
-  uint8_t w_ready; // 写准备好标记
+  int               fd;
+  lphps_listening_t listening; // 对应的监听端口信息
+  // unsigned          instance : 1;  // 失效标志位: 0 有效 1 失效
+  uint64_t        iCurrsequence; // 每次分配出去时+1，一定程度上检测错包废包
+  struct sockaddr s_sockaddr;    // 保存对方地址信息
 
   ngx_event_handler_pt rhandler; // 读事件处理
   ngx_event_handler_pt whandler; // 写事件处理
 
+  uint32_t events; // epoll事件相关
+
   // 收包相关信息
   unsigned char curStat;                      // 当前收包状态
   char          dataHeadInfo[_DATA_BUFSIZE_]; // 存放包头信息
+  char *        precvbuf;                     // 接收缓冲区的头指针
+  unsigned int  irecvlen;                     // 需要接受多少数据
+  char *        precvMemPointer;
 
-  char *       precvbuf; // 接收缓冲区的头指针
-  unsigned int irecvlen; // 需要接受多少数据
+  pthread_mutex_t logicProcMutex; // 逻辑处理互斥量
 
-  bool  ifnewrecvMem;
-  char *pnewMemPointer;
+  // 发包相关
+  std::atomic<int> iThrowsendCount; // 发送缓冲区满了
+  char *           psendMemPointer; // 发送完成后释放用，消息头 + 包头 + 包体
+  char *           psendbuf;        // 发送数据的缓冲区的头指针，包头+包体
+  unsigned int     isendlen;        // 要发送多少数据
 
-  lphps_connection_t data; // 后继指针，指向下一个本类型对象，用于把"空闲"的连接池对象构成一个单向链表，方便取用
+  time_t inRecyTime;
+
+  lphps_connection_t next; // 后继指针，指向下一个本类型对象，用于把"空闲"的连接池对象构成一个单向链表，方便取用
 };
 
 // 消息头
@@ -69,22 +81,28 @@ typedef struct _STRUC_MSG_HEADER {
 } STRUC_MSG_HEADER, *LPSTRUC_MSG_HEADER;
 
 // Socket 相关类
-class CSocekt {
+class CSocket {
 public:
-  CSocekt();
-  virtual ~CSocekt();
+  CSocket();
+  virtual ~CSocket();
 
   // Socket 初始化
   virtual bool Initialize();
+  virtual bool Initialize_subproc();
+  virtual void Shutdown_subproc();
+
+  virtual void threadRecvProcFunc(char *pMsgBuf); // 处理客户端请求
 
   int hps_epoll_init(); // epoll 初始化
 
-  // epoll增加事件
-  int hps_epoll_add_event(int fd, int readevent, int writeevent, uint32_t otherflag, uint32_t eventtype,
-                          lphps_connection_t c);
-  int hps_epoll_process_events(int timer); // epoll等待接收和处理事件
+  // epoll操作事件
+  int hps_epoll_oper_event(int fd, uint32_t eventtype, uint32_t flag, int bcaction, lphps_connection_t pConn);
 
-  virtual void threadRecvProcFunc(char *pMsgBuf); // 处理客户端请求
+  // epoll等待接收和处理事件
+  int hps_epoll_process_events(int timer);
+
+protected:
+  void sendMsg(char *sendBuf);
 
 private:
   void ReadConf();                    // 读配置项
@@ -101,12 +119,23 @@ private:
   void    hps_wait_request_handler_proc_p1(lphps_connection_t c);     // 包头收完整后的处理
   void    hps_wait_request_handler_proc_plast(lphps_connection_t c);  // 收到一个完整包后的处理
 
+  void    clearMsgSendQueue();
+  ssize_t sendproc(lphps_connection_t c, char *buff, ssize_t size); // 发送数据到客户端
+
   // 获取对端信息
   size_t hps_sock_ntop(struct sockaddr *sa, int port, u_char *text, size_t len);
 
   // 连接池操作
+  void initConnection();  // 初始化连接池
+  void clearConnection(); // 回收连接池
+
   lphps_connection_t hps_get_connection(int isock);
   void               hps_free_connection(lphps_connection_t c);
+
+  // 收集待回收连接
+  void inRecyConnectQueue(lphps_connection_t pConn);
+
+  static void *ServerRecyConnectionThread(void *threadData); // 回收连接的线程
 
 protected:
   // 网络通讯相关变量
@@ -114,17 +143,40 @@ protected:
   size_t m_iLenMsgHeader; // sizeof(STRUC_MSG_HEADER);
 
 private:
+  struct ThreadItem {
+    pthread_t _Handle;
+    CSocket * _pThis;
+    bool      ifrunning;
+
+    ThreadItem(CSocket *pthis) : _pThis(pthis), ifrunning(false) {}
+    ~ThreadItem() {}
+  };
+
   int m_worker_connections; // epoll最大连接数量
   int m_ListenPortCount;    // 监听的端口数量
   int m_epollhandle;        // epoll_create返回的句柄
 
-  lphps_connection_t m_pconnections;      // 连接池首地址
-  lphps_connection_t m_pfree_connections; // 连接池中空闲连接链表头
+  // 连接池相关
+  std::list<lphps_connection_t> m_connectionList;     // 连接池
+  std::list<lphps_connection_t> m_freeconnectionList; // 空闲连接列表
+  std::atomic<int>              m_total_connection_n; // 总连接数
+  std::atomic<int>              m_free_connection_n;  // 空闲连接数
 
-  int m_connection_n;      // 连接池大小
-  int m_free_connection_n; // 空闲连接数量
+  pthread_mutex_t m_connectionMutex;    // 连接相关互斥量，互斥m_freeconnectionList，m_connectionList
+  pthread_mutex_t m_recyconnqueueMutex; // 连接回收队列相关的互斥量
+
+  std::list<lphps_connection_t> m_recyconnectionList; // 待释放的连接
+  std::atomic<int>              m_totol_recyconnection_n;
+  int                           m_RecyConnectionWaitTime; // 等待释放时间
 
   std::vector<lphps_listening_t> m_ListenSocketList;       // 监听套接字队列
   struct epoll_event             m_events[HPS_MAX_EVENTS]; // 存储 epoll_wait() 返回的事件
+
+  std::list<char *> m_MsgSendQueue; // 发送数据消息队列
+  std::atomic<int>  m_iSendMsgQueueCount;
+
+  std::vector<ThreadItem *> m_threadVector;
+  pthread_mutex_t           m_sendMessageQueueMutex;
+  sem_t                     m_semEventSendQueue;
 };
 #endif // __HPS_C_SOCKET_H__

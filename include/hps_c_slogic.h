@@ -14,7 +14,7 @@
 #include "hps_c_socket.h"
 
 // 处理逻辑和通讯的子类
-class CLogicSocket : public CSocekt {
+class CLogicSocket : public CSocket {
 public:
   CLogicSocket();
   virtual ~CLogicSocket();

@@ -9,6 +9,12 @@
 #if !defined(__HPS_LOGIC_COMM_H__)
 #define __HPS_LOGIC_COMM_H__
 
+// 收发命令宏定义
+
+#define _CMD_START 0
+#define _CMD_REGISTER _CMD_START + 5
+#define _CMD_LOGIN _CMD_START + 6
+
 #pragma pack(1)
 
 typedef struct _STRUCT_REGISTER {

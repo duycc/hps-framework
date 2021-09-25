@@ -28,7 +28,7 @@
 #include "hps_macro.h"
 
 // 当连接上有数据来的时候，此函数会被hps_epoll_process_events()调用
-void CSocekt::hps_wait_request_handler(lphps_connection_t c) {
+void CSocket::hps_wait_request_handler(lphps_connection_t c) {
   ssize_t reco = recvproc(c, c->precvbuf, c->irecvlen);
   if (reco <= 0) {
     return; // recvproc()函数已经释放资源，可直接return
@@ -82,30 +82,36 @@ void CSocekt::hps_wait_request_handler(lphps_connection_t c) {
  * @param buflen 接受收据大小
  * @return ssize_t -1 有错误发生，>0 实际收到的字节数
  */
-ssize_t CSocekt::recvproc(lphps_connection_t c, char *buff, ssize_t buflen) {
+ssize_t CSocket::recvproc(lphps_connection_t c, char *buff, ssize_t buflen) {
   ssize_t n;
   n = recv(c->fd, buff, buflen, 0);
   if (n == 0) {
     // 客户端关闭
-    hps_close_connection(c);
+    if (close(c->fd) == -1) {
+      hps_log_error_core(HPS_LOG_ALERT, errno, "CSocket::recvproc()中close(%d)失败!", c->fd);
+    }
+    this->inRecyConnectQueue(c);
     return -1;
   }
   if (n < 0) {
     if (errno == EAGAIN || errno == EWOULDBLOCK) {
       // epoll为LT模式不应该出现这个返回值，不当做错误
-      hps_log_stderr(errno, "CSocekt::recvproc()中errno == EAGAIN || errno == EWOULDBLOCK成立！");
+      hps_log_stderr(errno, "CSocket::recvproc()中errno == EAGAIN || errno == EWOULDBLOCK成立！");
       return -1;
     }
     if (errno == EINTR) {
-      hps_log_stderr(errno, "CSocekt::recvproc()中errno == EINTR成立！");
+      hps_log_stderr(errno, "CSocket::recvproc()中errno == EINTR成立！");
       return -1;
     }
     if (errno == ECONNRESET) {
       // 客户端非正常退出，后续释放连接即可
     } else {
-      hps_log_stderr(errno, "CSocekt::recvproc()中发生错误！");
+      hps_log_stderr(errno, "CSocket::recvproc()中发生错误！");
     }
-    hps_close_connection(c);
+    if (close(c->fd) == -1) {
+      hps_log_error_core(HPS_LOG_ALERT, errno, "CSocket::recvproc()中close_2(%d)失败!", c->fd);
+    }
+    this->inRecyConnectQueue(c);
     return -1;
   }
 
@@ -113,7 +119,7 @@ ssize_t CSocekt::recvproc(lphps_connection_t c, char *buff, ssize_t buflen) {
 }
 
 // 处理接受到的包头
-void CSocekt::hps_wait_request_handler_proc_p1(lphps_connection_t c) {
+void CSocket::hps_wait_request_handler_proc_p1(lphps_connection_t c) {
   CMemory *p_memory = CMemory::GetInstance();
 
   LPCOMM_PKG_HEADER pPkgHeader;
@@ -137,8 +143,7 @@ void CSocekt::hps_wait_request_handler_proc_p1(lphps_connection_t c) {
   } else {
     // 合法包头，分配内存开始收包体
     char *pTmpBuffer = (char *)p_memory->AllocMemory(m_iLenMsgHeader + e_pkgLen, false); // 消息头 + 包头 + 包体
-    c->ifnewrecvMem = true;
-    c->pnewMemPointer = pTmpBuffer;
+    c->precvMemPointer = pTmpBuffer;
 
     // 保存消息头
     LPSTRUC_MSG_HEADER ptmpMsgHeader = (LPSTRUC_MSG_HEADER)pTmpBuffer;
@@ -163,17 +168,41 @@ void CSocekt::hps_wait_request_handler_proc_p1(lphps_connection_t c) {
 }
 
 // 收到一个完整包后的处理
-void CSocekt::hps_wait_request_handler_proc_plast(lphps_connection_t c) {
-  g_threadpool.inMsgRecvQueueAndSignal(c->pnewMemPointer);
-
-  c->ifnewrecvMem = false; // 内存交给消息队列管理
-  c->pnewMemPointer = NULL;
+void CSocket::hps_wait_request_handler_proc_plast(lphps_connection_t c) {
+  g_threadpool.inMsgRecvQueueAndSignal(c->precvMemPointer);
 
   // 接受下一个包
+  c->precvMemPointer = NULL;
   c->curStat = _PKG_HD_INIT;
   c->precvbuf = c->dataHeadInfo;
   c->irecvlen = m_iLenPkgHeader;
   return;
 }
 
-void CSocekt::threadRecvProcFunc(char *pMsgBuf) { return; }
+ssize_t CSocket::sendproc(lphps_connection_t c, char *buff, ssize_t size) {
+  ssize_t n;
+  for (;;) {
+    n = send(c->fd, buff, size, 0);
+    if (n > 0) {
+      return n;
+    }
+
+    if (n == 0) {
+      // 连接断开epoll会通知并且 recvproc()里会处理，不在这里处理
+      return 0;
+    }
+
+    if (errno == EAGAIN) {
+      return -1; // 发送缓冲区满了
+    }
+
+    if (errno == EINTR) {
+      hps_log_stderr(errno, "CSocket::sendproc()中send()失败.");
+    } else {
+      return -2;
+    }
+  }
+  return 0;
+}
+
+void CSocket::threadRecvProcFunc(char *pMsgBuf) { return; }

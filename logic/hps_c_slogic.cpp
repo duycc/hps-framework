@@ -28,6 +28,7 @@
 #include "hps_c_crc32.h"
 #include "hps_c_slogic.h"
 #include "hps_logiccomm.h"
+#include "hps_c_lockmutex.h"
 
 // 成员函数指针
 typedef bool (CLogicSocket::*handler)(lphps_connection_t pConn,      // 连接池中连接
@@ -58,7 +59,7 @@ CLogicSocket::CLogicSocket() {}
 CLogicSocket::~CLogicSocket() {}
 
 bool CLogicSocket::Initialize() {
-  bool bParentInit = CSocekt::Initialize();
+  bool bParentInit = CSocket::Initialize();
   return bParentInit;
 }
 
@@ -112,6 +113,41 @@ void CLogicSocket::threadRecvProcFunc(char *pMsgBuf) {
 
 bool CLogicSocket::_HandleRegister(lphps_connection_t pConn, LPSTRUC_MSG_HEADER pMsgHeader, char *pPkgBody,
                                    unsigned short iBodyLength) {
+
+  // 判断包体的合法性
+  if (pPkgBody == NULL) {
+    return false;
+  }
+
+  int iRecvLen = sizeof(STRUCT_REGISTER);
+  if (iRecvLen != iBodyLength) {
+    return false;
+  }
+
+  CLock lock(&pConn->logicProcMutex);
+
+  LPSTRUCT_REGISTER p_RecvInfo = (LPSTRUCT_REGISTER)pPkgBody;
+
+  // 返回数据给客户端
+  LPCOMM_PKG_HEADER pPkgHeader;
+  CMemory *         p_memory = CMemory::GetInstance();
+  CCRC32 *          p_crc32 = CCRC32::GetInstance();
+
+  int   iSendLen = sizeof(STRUCT_REGISTER);
+  char *p_sendbuf = (char *)p_memory->AllocMemory(m_iLenMsgHeader + m_iLenPkgHeader + iSendLen, false);
+  memcpy(p_sendbuf, pMsgHeader, m_iLenMsgHeader);
+
+  pPkgHeader = (LPCOMM_PKG_HEADER)(p_sendbuf + m_iLenMsgHeader);
+  pPkgHeader->msgCode = _CMD_REGISTER;
+  pPkgHeader->msgCode = htons(pPkgHeader->msgCode);
+  pPkgHeader->pkgLen = htons(m_iLenPkgHeader + iSendLen);
+  LPSTRUCT_REGISTER p_sendInfo = (LPSTRUCT_REGISTER)(p_sendbuf + m_iLenMsgHeader + m_iLenPkgHeader);
+
+  pPkgHeader->crc32 = p_crc32->Get_CRC((unsigned char *)p_sendInfo, iSendLen);
+  pPkgHeader->crc32 = htonl(pPkgHeader->crc32);
+
+  // TODO:发送数据逻辑
+
   hps_log_stderr(0, "执行了CLogicSocket::_HandleRegister()!");
   return true;
 }

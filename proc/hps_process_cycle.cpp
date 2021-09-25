@@ -157,7 +157,7 @@ static void hps_worker_process_cycle(int inum, const char *pprocname) {
   }
 
   g_threadpool.StopAll();
-  // g_socket.Shutdown_subproc(); // socket需要释放的东西考虑释放；
+  g_socket.Shutdown_subproc(); // socket需要释放的资源
   return;
 }
 
@@ -177,13 +177,10 @@ static void hps_worker_process_init(int inum) {
   if (g_threadpool.Create(tmpthreadnums) == false) {
     exit(-2);
   }
+  if (g_socket.Initialize_subproc() == false) {
+    exit(-2);
+  }
   sleep(1);
-
-  //   if (g_socket.Initialize_subproc() == false) //初始化子进程需要具备的一些多线程能力相关的信息
-  //   {
-  //     //内存没释放，但是简单粗暴退出；
-  //     exit(-2);
-  //   }
 
   g_socket.hps_epoll_init(); // 初始化epoll
 
