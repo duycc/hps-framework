@@ -119,7 +119,9 @@ void CLogicSocket::procPingTimeOutChecking(LPSTRUC_MSG_HEADER tmpmsg, time_t cur
     lphps_connection_t p_Conn = tmpmsg->pConn;
 
     // 超时踢出
-    if ((cur_time - p_Conn->lastPingTime) > (m_iWaitTime * 3 + 10)) {
+    if (m_ifTimeOutKick == 1) {
+      zdClosesocketProc(p_Conn);
+    } else if ((cur_time - p_Conn->lastPingTime) > (m_iWaitTime * 3 + 10)) {
       hps_log_stderr(0, "时间到不发心跳包，踢出去!");
       zdClosesocketProc(p_Conn);
     }
@@ -165,6 +167,9 @@ bool CLogicSocket::_HandleRegister(lphps_connection_t pConn, LPSTRUC_MSG_HEADER 
   CLock lock(&pConn->logicProcMutex);
 
   LPSTRUCT_REGISTER p_RecvInfo = (LPSTRUCT_REGISTER)pPkgBody;
+  p_RecvInfo->iType = ntohl(p_RecvInfo->iType);
+  p_RecvInfo->username[sizeof(p_RecvInfo->username) - 1] = 0;
+  p_RecvInfo->password[sizeof(p_RecvInfo->password) - 1] = 0;
 
   // 返回数据给客户端
   LPCOMM_PKG_HEADER pPkgHeader;

@@ -29,6 +29,7 @@
 
 // 当连接上有数据来的时候，此函数会被hps_epoll_process_events()调用
 void CSocket::hps_read_request_handler(lphps_connection_t c) {
+  bool isflood = false;
   ssize_t reco = recvproc(c, c->precvbuf, c->irecvlen);
   if (reco <= 0) {
     return; // recvproc()函数已经释放资源，可直接return
@@ -37,7 +38,7 @@ void CSocket::hps_read_request_handler(lphps_connection_t c) {
   if (c->curStat == _PKG_HD_INIT) {
     if (reco == m_iLenPkgHeader) {
       // 恰好收到完整包头 -> 拆解包头
-      hps_wait_request_handler_proc_p1(c); // 处理包头
+      hps_wait_request_handler_proc_p1(c, isflood); // 处理包头
     } else {
       // 收到不完整包头
       c->curStat = _PKG_HD_RECVING;
@@ -48,7 +49,7 @@ void CSocket::hps_read_request_handler(lphps_connection_t c) {
     // 包头不完整，继续接收中
     if (c->irecvlen == reco) {
       // 包头收完整了
-      hps_wait_request_handler_proc_p1(c);
+      hps_wait_request_handler_proc_p1(c, isflood);
     } else {
       c->precvbuf = c->precvbuf + reco;
       c->irecvlen = c->irecvlen - reco;
@@ -57,7 +58,10 @@ void CSocket::hps_read_request_handler(lphps_connection_t c) {
     // 包头刚好收完，准备接收包体
     if (reco == c->irecvlen) {
       // 收到的宽度等于要收的宽度，包体收完整了
-      hps_wait_request_handler_proc_plast(c);
+      if (m_floodAkEnable == 1) {
+        isflood = this->TestFlood(c);
+      }
+      hps_wait_request_handler_proc_plast(c, isflood);
     } else {
       c->curStat = _PKG_BD_RECVING;
       c->precvbuf = c->precvbuf + reco;
@@ -65,11 +69,19 @@ void CSocket::hps_read_request_handler(lphps_connection_t c) {
     }
   } else if (c->curStat == _PKG_BD_RECVING) {
     if (c->irecvlen == reco) {
-      hps_wait_request_handler_proc_plast(c);
+      if (m_floodAkEnable == 1) {
+        isflood = this->TestFlood(c);
+      }
+      hps_wait_request_handler_proc_plast(c, isflood);
     } else {
       c->precvbuf = c->precvbuf + reco;
       c->irecvlen = c->irecvlen - reco;
     }
+  }
+
+  if (isflood) {
+    hps_log_stderr(errno, "发现客户端flood，干掉该客户端!");
+    zdClosesocketProc(c);
   }
   return;
 }
@@ -119,7 +131,7 @@ ssize_t CSocket::recvproc(lphps_connection_t c, char *buff, ssize_t buflen) {
 }
 
 // 处理接受到的包头
-void CSocket::hps_wait_request_handler_proc_p1(lphps_connection_t c) {
+void CSocket::hps_wait_request_handler_proc_p1(lphps_connection_t c, bool &isflood) {
   CMemory *p_memory = CMemory::GetInstance();
 
   LPCOMM_PKG_HEADER pPkgHeader;
@@ -155,7 +167,10 @@ void CSocket::hps_wait_request_handler_proc_p1(lphps_connection_t c) {
     memcpy(pTmpBuffer, pPkgHeader, m_iLenPkgHeader);
     if (e_pkgLen == m_iLenPkgHeader) {
       // 特殊包，无包体有包头，认为是一个完整包
-      hps_wait_request_handler_proc_plast(c);
+      if (m_floodAkEnable == 1) {
+        isflood = TestFlood(c);
+      }
+      hps_wait_request_handler_proc_plast(c, isflood);
     } else {
       // 开始收包体
       c->curStat = _PKG_BD_INIT;
@@ -168,8 +183,14 @@ void CSocket::hps_wait_request_handler_proc_p1(lphps_connection_t c) {
 }
 
 // 收到一个完整包后的处理
-void CSocket::hps_wait_request_handler_proc_plast(lphps_connection_t c) {
-  g_threadpool.inMsgRecvQueueAndSignal(c->precvMemPointer);
+void CSocket::hps_wait_request_handler_proc_plast(lphps_connection_t c, bool &isflood) {
+  if (isflood == false) {
+    g_threadpool.inMsgRecvQueueAndSignal(c->precvMemPointer);
+  } else {
+    CMemory *p_memory = CMemory::GetInstance();
+    p_memory->FreeMemory(c->precvMemPointer);
+  }
+  c->precvMemPointer = NULL;
 
   // 接受下一个包
   c->precvMemPointer = NULL;

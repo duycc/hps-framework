@@ -40,6 +40,7 @@ hps_connection_s::~hps_connection_s() {
 
 void hps_connection_s::getOneToUse() {
   ++iCurrsequence;
+  fd = -1;
   curStat = _PKG_HD_INIT;
   precvbuf = dataHeadInfo;
   irecvlen = sizeof(COMM_PKG_HEADER);
@@ -48,6 +49,10 @@ void hps_connection_s::getOneToUse() {
   iThrowsendCount = 0;
   psendMemPointer = NULL;
   events = 0;
+  lastPingTime = time(NULL);
+
+  FloodAttackCount = 0;
+  FloodkickLastTime = 0;
   return;
 }
 
@@ -149,6 +154,7 @@ void CSocket::inRecyConnectQueue(lphps_connection_t pConn) {
   ++pConn->iCurrsequence;
   m_recyconnectionList.push_back(pConn);
   ++m_totol_recyconnection_n;
+  --m_onlineUserCount;
   return;
 }
 

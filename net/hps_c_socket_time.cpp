@@ -72,12 +72,14 @@ LPSTRUC_MSG_HEADER CSocket::GetOverTimeTimer(time_t cur_time) {
     ptmp = RemoveFirstTimer();
 
     // 因为需要判断下次超时的时间，把此节点再进行保存
-    time_t newinqueutime = cur_time + (m_iWaitTime);
-    LPSTRUC_MSG_HEADER tmpMsgHeader = (LPSTRUC_MSG_HEADER)p_memory->AllocMemory(sizeof(STRUC_MSG_HEADER), false);
-    tmpMsgHeader->pConn = ptmp->pConn;
-    tmpMsgHeader->iCurrsequence = ptmp->iCurrsequence;
-    m_timerQueuemap.insert(std::make_pair(newinqueutime, tmpMsgHeader));
-    m_cur_size_++;
+    if (m_ifTimeOutKick != 1) {
+      time_t newinqueutime = cur_time + (m_iWaitTime);
+      LPSTRUC_MSG_HEADER tmpMsgHeader = (LPSTRUC_MSG_HEADER)p_memory->AllocMemory(sizeof(STRUC_MSG_HEADER), false);
+      tmpMsgHeader->pConn = ptmp->pConn;
+      tmpMsgHeader->iCurrsequence = ptmp->iCurrsequence;
+      m_timerQueuemap.insert(std::make_pair(newinqueutime, tmpMsgHeader));
+      m_cur_size_++;
+    }
 
     if (m_cur_size_ > 0) {
       m_timer_value_ = GetEarliestTime();

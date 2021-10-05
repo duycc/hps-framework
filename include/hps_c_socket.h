@@ -73,6 +73,10 @@ struct hps_connection_s {
   time_t inRecyTime;   // 判断回收时间
   time_t lastPingTime; // 心跳包检测
 
+  // 网络安全
+  uint64_t FloodkickLastTime; // Flood攻击上次收到包的时间
+  int FloodAttackCount;       // Flood攻击在该时间内收到包的次数统计
+
   lphps_connection_t next; // 后继指针，指向下一个本类型对象，用于把"空闲"的连接池对象构成一个单向链表，方便取用
 };
 
@@ -121,9 +125,9 @@ private:
   void hps_write_request_handler(lphps_connection_t pConn); // 数据发送时的写处理函数
   void hps_close_connection(lphps_connection_t c);          // 关闭连接，释放资源
 
-  ssize_t recvproc(lphps_connection_t c, char *buff, ssize_t buflen); // 接收从客户端来的数据
-  void hps_wait_request_handler_proc_p1(lphps_connection_t c);        // 包头收完整后的处理
-  void hps_wait_request_handler_proc_plast(lphps_connection_t c);     // 收到一个完整包后的处理
+  ssize_t recvproc(lphps_connection_t c, char *buff, ssize_t buflen);            // 接收从客户端来的数据
+  void hps_wait_request_handler_proc_p1(lphps_connection_t c, bool &isflood);    // 包头收完整后的处理
+  void hps_wait_request_handler_proc_plast(lphps_connection_t c, bool &isflood); // 收到一个完整包后的处理
 
   void clearMsgSendQueue();
   ssize_t sendproc(lphps_connection_t c, char *buff, ssize_t size); // 发送数据到客户端
@@ -149,6 +153,8 @@ private:
   void DeleteFromTimerQueue(lphps_connection_t pConn); // 把指定用户tcp连接从timer移除
   void clearAllFromTimerQueue();                       // 清空时间队列
 
+  bool TestFlood(lphps_connection_t pConn); // 测试是否flood攻击成立，成立则返回true，否则返回false
+
   // 线程处理函数
   static void *ServerSendQueueThread(void *threadData);      // 发送数据的线程
   static void *ServerRecyConnectionThread(void *threadData); // 回收连接的线程
@@ -160,6 +166,7 @@ protected:
   size_t m_iLenMsgHeader; // sizeof(STRUC_MSG_HEADER);
 
   int m_iWaitTime; // 检测心跳包时间
+  int m_ifTimeOutKick;
 
 private:
   struct ThreadItem {
@@ -204,5 +211,13 @@ private:
   std::multimap<time_t, LPSTRUC_MSG_HEADER> m_timerQueuemap; // 时间队列
   size_t m_cur_size_;                                        // 时间队列的尺寸
   time_t m_timer_value_;                                     // 当前计时队列头部时间值
+
+  // 控制在线用户数量
+  std::atomic<int> m_onlineUserCount;
+
+  // 网络安全相关
+  int m_floodAkEnable;              // Flood攻击检测是否开启,1：开启   0：不开启
+  unsigned int m_floodTimeInterval; // 表示每次收到数据包的时间间隔是100(毫秒)
+  int m_floodKickCount;             // 累积收到多少次即踢出
 };
 #endif // __HPS_C_SOCKET_H__

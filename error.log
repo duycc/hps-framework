@@ -1,21 +1,29 @@
-2021/10/05 16:52:30 [info] 5157: 监听80端口成功!
-2021/10/05 16:52:30 [info] 5157: 监听443端口成功!
-2021/10/05 16:52:30 [notice] 5158: master process 5158 【master】进程启动并执行......!
-2021/10/05 16:52:30 [stderr] 5159: hpServer: CThreadPool::Create()创建线程-2021128448成功,线程id=0
-2021/10/05 16:52:30 [stderr] 5159: hpServer: CThreadPool::Create()创建线程-2029582592成功,线程id=0
-2021/10/05 16:52:32 [notice] 5159: worker process 5159 【worker】进程启动并执行......!
-2021/10/05 16:53:06 [stderr] 5159: hpServer: 成功收到了心跳包并返回结果！
-2021/10/05 16:53:06 [stderr] 5159: hpServer: 即将发送数据8。
-2021/10/05 16:53:06 [stderr] 5159: hpServer: CSocket::ServerSendQueueThread()中数据发送完毕，很好。
-2021/10/05 16:53:09 [stderr] 5159: hpServer: 即将发送数据8。
-2021/10/05 16:53:09 [stderr] 5159: hpServer: 成功收到了心跳包并返回结果！
-2021/10/05 16:53:09 [stderr] 5159: hpServer: CSocket::ServerSendQueueThread()中数据发送完毕，很好。
-2021/10/05 16:53:15 [stderr] 5159: hpServer: 即将发送数据8。
-2021/10/05 16:53:15 [stderr] 5159: hpServer: 成功收到了心跳包并返回结果！
-2021/10/05 16:53:15 [stderr] 5159: hpServer: CSocket::ServerSendQueueThread()中数据发送完毕，很好。
-2021/10/05 16:53:18 [stderr] 5159: hpServer: 即将发送数据8。
-2021/10/05 16:53:18 [stderr] 5159: hpServer: 成功收到了心跳包并返回结果！
-2021/10/05 16:53:18 [stderr] 5159: hpServer: CSocket::ServerSendQueueThread()中数据发送完毕，很好。
-2021/10/05 16:54:49 [stderr] 5159: hpServer: 时间到不发心跳包，踢出去!
-2021/10/05 16:54:49 [stderr] 5159: hpServer: CSocket::inRecyConnectQueue()执行，连接入到回收队列中.
-2021/10/05 16:56:09 [stderr] 5159: hpServer: CSocket::ServerRecyConnectionThread()执行，连接-1被归还.
+2021/10/05 19:16:23 [info] 10145: 监听80端口成功!
+2021/10/05 19:16:23 [info] 10145: 监听443端口成功!
+2021/10/05 19:16:23 [notice] 10146: master process 10146 【master】进程启动并执行......!
+2021/10/05 19:16:23 [stderr] 10147: hpServer: CThreadPool::Create()创建线程1548224256成功,线程id=0
+2021/10/05 19:16:23 [stderr] 10147: hpServer: CThreadPool::Create()创建线程1539770112成功,线程id=0
+2021/10/05 19:16:24 [notice] 10147: worker process 10147 【worker】进程启动并执行......!
+2021/10/05 19:16:38 [stderr] 10147: hpServer: 成功收到了心跳包并返回结果！
+2021/10/05 19:16:38 [stderr] 10147: hpServer: 即将发送数据8。
+2021/10/05 19:16:38 [stderr] 10147: hpServer: CThreadPool::Call()中发现线程池中当前空闲线程数量为0，要考虑扩容线程池了!
+2021/10/05 19:16:38 [stderr] 10147: hpServer: 发现客户端flood，干掉该客户端!
+2021/10/05 19:16:38 [stderr] 10147: hpServer: CSocket::ServerSendQueueThread()中数据发送完毕，很好。
+2021/10/05 19:16:38 [stderr] 10147: hpServer: CSocket::inRecyConnectQueue()执行，连接入到回收队列中.
+2021/10/05 19:16:38 [stderr] 10147: hpServer: 成功收到了心跳包并返回结果！
+2021/10/05 19:16:38 [stderr] 10147: hpServer: 成功收到了心跳包并返回结果！
+2021/10/05 19:17:04 [stderr] 10147: hpServer: 执行了CLogicSocket::_HandleRegister()!
+2021/10/05 19:17:04 [stderr] 10147: hpServer: 即将发送数据108。
+2021/10/05 19:17:04 [stderr] 10147: hpServer: CSocket::ServerSendQueueThread()中数据发送完毕，很好。
+2021/10/05 19:17:09 [stderr] 10147: hpServer: 执行了CLogicSocket::_HandleRegister()!
+2021/10/05 19:17:09 [stderr] 10147: hpServer: 即将发送数据108。
+2021/10/05 19:17:09 [stderr] 10147: hpServer: CSocket::ServerSendQueueThread()中数据发送完毕，很好。
+2021/10/05 19:17:13 [stderr] 10147: hpServer: 执行了CLogicSocket::_HandleRegister()!
+2021/10/05 19:17:13 [stderr] 10147: hpServer: 即将发送数据108。
+2021/10/05 19:17:13 [stderr] 10147: hpServer: CSocket::ServerSendQueueThread()中数据发送完毕，很好。
+2021/10/05 19:17:16 [stderr] 10147: hpServer: 执行了CLogicSocket::_HandleRegister()!
+2021/10/05 19:17:16 [stderr] 10147: hpServer: 即将发送数据108。
+2021/10/05 19:17:16 [stderr] 10147: hpServer: CSocket::ServerSendQueueThread()中数据发送完毕，很好。
+2021/10/05 19:17:17 [stderr] 10147: hpServer: CSocket::recvproc()中发生错误！ (9: Bad file descriptor) 
+2021/10/05 19:17:17 [alert] 10147: CSocket::recvproc()中close_2(-1)失败! (9: Bad file descriptor) 
+2021/10/05 19:17:58 [stderr] 10147: hpServer: CSocket::ServerRecyConnectionThread()执行，连接-1被归还.

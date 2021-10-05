@@ -73,6 +73,13 @@ void CSocket::hps_event_accept(lphps_connection_t oldc) {
       }
       return;
     }
+
+    if (m_onlineUserCount >= m_worker_connections) { // 用户连接数过多
+      hps_log_stderr(0, "超出系统允许的最大连入用户数(最大允许连入数%d)，关闭连入请求(%d)。", m_worker_connections, s);
+      close(s);
+      return;
+    }
+
     newc = hps_get_connection(s);
     if (newc == NULL) {
       if (close(s) == -1) {
@@ -110,7 +117,7 @@ void CSocket::hps_event_accept(lphps_connection_t oldc) {
     if (m_ifkickTimeCount == 1) {
       this->AddToTimerQueue(newc);
     }
-
+    ++m_onlineUserCount;
     break;
   } while (1);
   return;

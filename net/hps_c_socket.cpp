@@ -43,6 +43,8 @@ CSocket::CSocket() {
   m_cur_size_ = 0;
   m_timer_value_ = 0;
 
+  m_onlineUserCount = 0;
+
   return;
 }
 
@@ -153,6 +155,11 @@ void CSocket::ReadConf() {
   m_ifkickTimeCount = p_config->GetIntDefault("Sock_WaitTimeEnable", 0);
   m_iWaitTime = p_config->GetIntDefault("Sock_MaxWaitTime", m_iWaitTime);
   m_iWaitTime = (m_iWaitTime > 5) ? m_iWaitTime : 5;
+  m_ifTimeOutKick = p_config->GetIntDefault("Sock_TimeOutKick", 0);
+
+  m_floodAkEnable = p_config->GetIntDefault("Sock_FloodAttackKickEnable", 0);
+  m_floodTimeInterval = p_config->GetIntDefault("Sock_FloodTimeInterval", 100);
+  m_floodKickCount = p_config->GetIntDefault("Sock_FloodKickCounter", 10);
 
   return;
 }
@@ -263,6 +270,29 @@ void CSocket::zdClosesocketProc(lphps_connection_t p_Conn) {
 
   inRecyConnectQueue(p_Conn);
   return;
+}
+
+// 测试是否flood攻击成立，成立则返回true，否则返回false
+bool CSocket::TestFlood(lphps_connection_t pConn) {
+  struct timeval sCurrTime;
+  uint64_t iCurrTime;
+  bool reco = false;
+
+  gettimeofday(&sCurrTime, NULL);                                     // 取得当前时间
+  iCurrTime = (sCurrTime.tv_sec * 1000 + sCurrTime.tv_usec / 1000);   // 毫秒
+  if ((iCurrTime - pConn->FloodkickLastTime) < m_floodTimeInterval) { // 两次收到包的时间 < 100毫秒
+    // 发包太频繁记录
+    pConn->FloodAttackCount++;
+    pConn->FloodkickLastTime = iCurrTime;
+  } else {
+    pConn->FloodAttackCount = 0;
+    pConn->FloodkickLastTime = iCurrTime;
+  }
+
+  if (pConn->FloodAttackCount >= m_floodKickCount) {
+    reco = true; // 是否可以踢出此客户端
+  }
+  return reco;
 }
 
 int CSocket::hps_epoll_init() {
