@@ -40,6 +40,9 @@ CSocket::CSocket() {
   m_iSendMsgQueueCount = 0;
   m_totol_recyconnection_n = 0;
 
+  m_cur_size_ = 0;
+  m_timer_value_ = 0;
+
   return;
 }
 
@@ -73,6 +76,11 @@ bool CSocket::Initialize_subproc() {
     hps_log_stderr(0, "CSocket::Initialize()中pthread_mutex_init(&m_recyconnqueueMutex)失败.");
     return false;
   }
+  // 和时间处理队列有关的互斥量初始化
+  if (pthread_mutex_init(&m_timequeueMutex, NULL) != 0) {
+    hps_log_stderr(0, "CSocket::Initialize_subproc()中pthread_mutex_init(&m_timequeueMutex)失败.");
+    return false;
+  }
 
   if (sem_init(&m_semEventSendQueue, 0, 0) == -1) {
     hps_log_stderr(0, "CSocket::Initialize()中sem_init(&m_semEventSendQueue,0,0)失败.");
@@ -80,7 +88,7 @@ bool CSocket::Initialize_subproc() {
   }
 
   // 创建发送线程和回收线程
-  int         err;
+  int err;
   ThreadItem *pSendQueue;
   m_threadVector.push_back(pSendQueue = new ThreadItem(this));
   err = pthread_create(&pSendQueue->_Handle, NULL, ServerSendQueueThread, pSendQueue);
@@ -91,12 +99,28 @@ bool CSocket::Initialize_subproc() {
   ThreadItem *pRecyconn;
   m_threadVector.push_back(pRecyconn = new ThreadItem(this));
   err = pthread_create(&pRecyconn->_Handle, NULL, ServerRecyConnectionThread, pRecyconn);
-  return err == 0;
+  if (err != 0) {
+    hps_log_stderr(0, "CSocket::Initialize_subproc()中pthread_create(ServerRecyConnectionThread)失败.");
+    return false;
+  }
+
+  if (m_ifkickTimeCount == 1) //是否开启踢人时钟，1：开启   0：不开启
+  {
+    ThreadItem *pTimemonitor; //专门用来处理到期不发心跳包的用户踢出的线程
+    m_threadVector.push_back(pTimemonitor = new ThreadItem(this));
+    err = pthread_create(&pTimemonitor->_Handle, NULL, ServerTimerQueueMonitorThread, pTimemonitor);
+    if (err != 0) {
+      hps_log_stderr(0, "CSocket::Initialize_subproc()中pthread_create(ServerTimerQueueMonitorThread)失败.");
+      return false;
+    }
+  }
+
+  return true;
 }
 
 void CSocket::Shutdown_subproc() {
   if (sem_post(&m_semEventSendQueue) == -1) {
-    hps_log_stderr(0, "CSocekt::Shutdown_subproc()中sem_post(&m_semEventSendQueue)失败.");
+    hps_log_stderr(0, "CSocket::Shutdown_subproc()中sem_post(&m_semEventSendQueue)失败.");
   }
   std::vector<ThreadItem *>::iterator iter;
   for (iter = m_threadVector.begin(); iter != m_threadVector.end(); iter++) {
@@ -110,10 +134,12 @@ void CSocket::Shutdown_subproc() {
 
   this->clearMsgSendQueue();
   this->clearConnection();
+  this->clearAllFromTimerQueue();
 
   pthread_mutex_destroy(&m_connectionMutex);
   pthread_mutex_destroy(&m_sendMessageQueueMutex);
   pthread_mutex_destroy(&m_recyconnqueueMutex);
+  pthread_mutex_destroy(&m_timequeueMutex);
   sem_destroy(&m_semEventSendQueue);
   return;
 }
@@ -123,15 +149,20 @@ void CSocket::ReadConf() {
   m_worker_connections = p_config->GetIntDefault("worker_connections", m_worker_connections);
   m_ListenPortCount = p_config->GetIntDefault("ListenPortCount", m_ListenPortCount);
   m_RecyConnectionWaitTime = p_config->GetIntDefault("Sock_RecyConnectionWaitTime", m_RecyConnectionWaitTime);
+
+  m_ifkickTimeCount = p_config->GetIntDefault("Sock_WaitTimeEnable", 0);
+  m_iWaitTime = p_config->GetIntDefault("Sock_MaxWaitTime", m_iWaitTime);
+  m_iWaitTime = (m_iWaitTime > 5) ? m_iWaitTime : 5;
+
   return;
 }
 
 // 打开监听端口，需在创建 worker 进程之前执行
 bool CSocket::hps_open_listening_sockets() {
-  int                isock;
+  int isock;
   struct sockaddr_in serv_addr;
-  int                iport;
-  char               strinfo[100];
+  int iport;
+  char strinfo[100];
 
   memset(&serv_addr, 0, sizeof(serv_addr));
   serv_addr.sin_family = AF_INET;                // 选择协议族为IPV4
@@ -206,7 +237,7 @@ void CSocket::hps_close_listening_sockets() {
 }
 
 void CSocket::clearMsgSendQueue() {
-  char *   sTmpMempoint;
+  char *sTmpMempoint;
   CMemory *p_memory = CMemory::GetInstance();
 
   while (!m_MsgSendQueue.empty()) {
@@ -214,6 +245,23 @@ void CSocket::clearMsgSendQueue() {
     m_MsgSendQueue.pop_front();
     p_memory->FreeMemory(sTmpMempoint);
   }
+  return;
+}
+
+// 主动关闭一个连接时的资源释放
+void CSocket::zdClosesocketProc(lphps_connection_t p_Conn) {
+  if (m_ifkickTimeCount == 1) {
+    DeleteFromTimerQueue(p_Conn);
+  }
+  if (p_Conn->fd != -1) {
+    close(p_Conn->fd);
+    p_Conn->fd = -1;
+  }
+
+  if (p_Conn->iThrowsendCount > 0)
+    --p_Conn->iThrowsendCount;
+
+  inRecyConnectQueue(p_Conn);
   return;
 }
 
@@ -260,10 +308,10 @@ void CSocket::sendMsg(char *psendbuf) {
   return;
 }
 
-int CSocket::hps_epoll_oper_event(int      fd,        // socket
+int CSocket::hps_epoll_oper_event(int fd,             // socket
                                   uint32_t eventtype, // 事件类型 EPOLL_CTL_ADD，EPOLL_CTL_MOD，EPOLL_CTL_DEL
                                   uint32_t flag,      // 取决于eventtype
-                                  int      bcaction,  // 补充标志
+                                  int bcaction,       // 补充标志
                                   lphps_connection_t pConn) {
   struct epoll_event ev;
   memset(&ev, 0, sizeof(ev));
@@ -390,7 +438,7 @@ int CSocket::hps_epoll_process_events(int timer) {
         // EPOLLRDHUP：表示TCP连接的远端关闭或者半关闭连接   8192   = 0010  0000   0000   0000
         --p_Conn->iThrowsendCount;
       } else {
-        // 数据没有发送完毕，由系统驱动来发送 CSocekt::hps_write_request_handler()
+        // 数据没有发送完毕，由系统驱动来发送 CSocket::hps_write_request_handler()
         (this->*(p_Conn->whandler))(p_Conn);
       }
     }

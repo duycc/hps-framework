@@ -24,6 +24,12 @@ public:
                        unsigned short iBodyLength);
   bool _HandleLogIn(lphps_connection_t pConn, LPSTRUC_MSG_HEADER pMsgHeader, char *pPkgBody,
                     unsigned short iBodyLength);
+  bool _HandlePing(lphps_connection_t pConn, LPSTRUC_MSG_HEADER pMsgHeader, char *pPkgBody, unsigned short iBodyLength);
+
+  // 通用数据收发函数
+  void SendNoBodyPkgToClient(LPSTRUC_MSG_HEADER pMsgHeader, unsigned short iMsgCode);
+
+  virtual void procPingTimeOutChecking(LPSTRUC_MSG_HEADER tmpmsg, time_t cur_time);
 
   void threadRecvProcFunc(char *pMsgBuf) override;
 };

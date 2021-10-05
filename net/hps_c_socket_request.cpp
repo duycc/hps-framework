@@ -216,19 +216,19 @@ void CSocket::hps_write_request_handler(lphps_connection_t pConn) {
     pConn->isendlen = pConn->isendlen - sendsize;
     return;
   } else if (sendsize == -1) {
-    hps_log_stderr(errno, "CSocekt::hps_write_request_handler()时if(sendsize == -1)成立，这很怪异。");
+    hps_log_stderr(errno, "CSocket::hps_write_request_handler()时if(sendsize == -1)成立，这很怪异。");
     return;
   }
 
   if (sendsize > 0 && sendsize == pConn->isendlen) {
     if (hps_epoll_oper_event(pConn->fd, EPOLL_CTL_MOD, EPOLLOUT, 1, pConn) == -1) {
-      hps_log_stderr(errno, "CSocekt::hps_write_request_handler()中hps_epoll_oper_event()失败。");
+      hps_log_stderr(errno, "CSocket::hps_write_request_handler()中hps_epoll_oper_event()失败。");
     }
-    hps_log_stderr(0, "CSocekt::hps_write_request_handler()中数据发送完毕，很好。");
+    hps_log_stderr(0, "CSocket::hps_write_request_handler()中数据发送完毕，很好。");
   }
 
   if (sem_post(&m_semEventSendQueue) == -1)
-    hps_log_stderr(0, "CSocekt::hps_write_request_handler()中sem_post(&m_semEventSendQueue)失败.");
+    hps_log_stderr(0, "CSocket::hps_write_request_handler()中sem_post(&m_semEventSendQueue)失败.");
 
   p_memory->FreeMemory(pConn->psendMemPointer);
   pConn->psendMemPointer = NULL;

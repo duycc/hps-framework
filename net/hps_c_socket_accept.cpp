@@ -28,12 +28,12 @@
 // 新连接连入处理函数
 void CSocket::hps_event_accept(lphps_connection_t oldc) {
   // LT模式下，可以只 accept 一次，如果没有处理，事件还会继续通知，避免阻塞
-  struct sockaddr    mysockaddr;
-  socklen_t          socklen;
-  int                err;
-  int                level;
-  int                s;
-  static int         use_accept4 = 1;
+  struct sockaddr mysockaddr;
+  socklen_t socklen;
+  int err;
+  int level;
+  int s;
+  static int use_accept4 = 1;
   lphps_connection_t newc;
 
   socklen = sizeof(mysockaddr);
@@ -106,6 +106,11 @@ void CSocket::hps_event_accept(lphps_connection_t oldc) {
       hps_close_connection(newc);
       return;
     }
+
+    if (m_ifkickTimeCount == 1) {
+      this->AddToTimerQueue(newc);
+    }
+
     break;
   } while (1);
   return;

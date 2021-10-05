@@ -33,17 +33,17 @@
 // 成员函数指针
 typedef bool (CLogicSocket::*handler)(lphps_connection_t pConn,      // 连接池中连接
                                       LPSTRUC_MSG_HEADER pMsgHeader, // 消息头
-                                      char *             pPkgBody,   // 包体
-                                      unsigned short     iBodyLength);   // 包体长度
+                                      char *pPkgBody,                // 包体
+                                      unsigned short iBodyLength);   // 包体长度
 
 // 保存 成员函数指针 的数组
 static const handler statusHandler[] = {
     // 前5个元素保留，以备将来增加一些基本服务器功能
-    NULL, // 【0】
-    NULL, // 【1】
-    NULL, // 【2】
-    NULL, // 【3】
-    NULL, // 【4】
+    &CLogicSocket::_HandlePing, // 心跳包检测
+    NULL,                       // 【1】
+    NULL,                       // 【2】
+    NULL,                       // 【3】
+    NULL,                       // 【4】
 
     // 具体的业务逻辑
     &CLogicSocket::_HandleRegister, // 【5】 注册功能
@@ -66,9 +66,9 @@ bool CLogicSocket::Initialize() {
 // 处理收到的数据包
 void CLogicSocket::threadRecvProcFunc(char *pMsgBuf) {
   LPSTRUC_MSG_HEADER pMsgHeader = (LPSTRUC_MSG_HEADER)pMsgBuf;
-  LPCOMM_PKG_HEADER  pPkgHeader = (LPCOMM_PKG_HEADER)(pMsgBuf + m_iLenMsgHeader);
-  void *             pPkgBody = NULL;
-  unsigned short     pkglen = ntohs(pPkgHeader->pkgLen); // 客户端指明的包宽度"包头+包体"
+  LPCOMM_PKG_HEADER pPkgHeader = (LPCOMM_PKG_HEADER)(pMsgBuf + m_iLenMsgHeader);
+  void *pPkgBody = NULL;
+  unsigned short pkglen = ntohs(pPkgHeader->pkgLen); // 客户端指明的包宽度"包头+包体"
 
   if (m_iLenPkgHeader == pkglen) {
     // 只有包头
@@ -89,7 +89,7 @@ void CLogicSocket::threadRecvProcFunc(char *pMsgBuf) {
     }
   }
 
-  unsigned short     imsgCode = ntohs(pPkgHeader->msgCode);
+  unsigned short imsgCode = ntohs(pPkgHeader->msgCode);
   lphps_connection_t p_Conn = pMsgHeader->pConn;
 
   // 客户端断开，过滤过期包
@@ -108,6 +108,44 @@ void CLogicSocket::threadRecvProcFunc(char *pMsgBuf) {
   }
 
   (this->*statusHandler[imsgCode])(p_Conn, pMsgHeader, (char *)pPkgBody, pkglen - m_iLenPkgHeader);
+  return;
+}
+
+// 心跳包检测函数
+void CLogicSocket::procPingTimeOutChecking(LPSTRUC_MSG_HEADER tmpmsg, time_t cur_time) {
+  CMemory *p_memory = CMemory::GetInstance();
+
+  if (tmpmsg->iCurrsequence == tmpmsg->pConn->iCurrsequence) { // 有效连接
+    lphps_connection_t p_Conn = tmpmsg->pConn;
+
+    // 超时踢出
+    if ((cur_time - p_Conn->lastPingTime) > (m_iWaitTime * 3 + 10)) {
+      hps_log_stderr(0, "时间到不发心跳包，踢出去!");
+      zdClosesocketProc(p_Conn);
+    }
+
+    p_memory->FreeMemory(tmpmsg);
+  } else { // 此连接已断开
+    p_memory->FreeMemory(tmpmsg);
+  }
+  return;
+}
+
+// 给客户端发送心跳包
+void CLogicSocket::SendNoBodyPkgToClient(LPSTRUC_MSG_HEADER pMsgHeader, unsigned short iMsgCode) {
+  CMemory *p_memory = CMemory::GetInstance();
+
+  char *p_sendbuf = (char *)p_memory->AllocMemory(m_iLenMsgHeader + m_iLenPkgHeader, false);
+  char *p_tmpbuf = p_sendbuf;
+
+  memcpy(p_tmpbuf, pMsgHeader, m_iLenMsgHeader);
+  p_tmpbuf += m_iLenMsgHeader;
+
+  LPCOMM_PKG_HEADER pPkgHeader = (LPCOMM_PKG_HEADER)p_tmpbuf;
+  pPkgHeader->msgCode = htons(iMsgCode);
+  pPkgHeader->pkgLen = htons(m_iLenPkgHeader);
+  pPkgHeader->crc32 = 0;
+  sendMsg(p_sendbuf);
   return;
 }
 
@@ -130,11 +168,11 @@ bool CLogicSocket::_HandleRegister(lphps_connection_t pConn, LPSTRUC_MSG_HEADER 
 
   // 返回数据给客户端
   LPCOMM_PKG_HEADER pPkgHeader;
-  CMemory *         p_memory = CMemory::GetInstance();
-  CCRC32 *          p_crc32 = CCRC32::GetInstance();
+  CMemory *p_memory = CMemory::GetInstance();
+  CCRC32 *p_crc32 = CCRC32::GetInstance();
 
   int iSendLen = sizeof(STRUCT_REGISTER);
-  iSendLen = 65000; // 测试
+  // iSendLen = 65000; // 测试
 
   char *p_sendbuf = (char *)p_memory->AllocMemory(m_iLenMsgHeader + m_iLenPkgHeader + iSendLen, false);
   memcpy(p_sendbuf, pMsgHeader, m_iLenMsgHeader);
@@ -156,5 +194,19 @@ bool CLogicSocket::_HandleRegister(lphps_connection_t pConn, LPSTRUC_MSG_HEADER 
 bool CLogicSocket::_HandleLogIn(lphps_connection_t pConn, LPSTRUC_MSG_HEADER pMsgHeader, char *pPkgBody,
                                 unsigned short iBodyLength) {
   hps_log_stderr(0, "执行了CLogicSocket::_HandleLogIn()!");
+  return true;
+}
+
+// 接收并处理客户端发送过来的ping包
+bool CLogicSocket::_HandlePing(lphps_connection_t pConn, LPSTRUC_MSG_HEADER pMsgHeader, char *pPkgBody,
+                               unsigned short iBodyLength) {
+  if (iBodyLength != 0)
+    return false;
+
+  CLock lock(&pConn->logicProcMutex); // 凡是和本用户有关的访问都考虑用互斥
+  pConn->lastPingTime = time(NULL);
+
+  SendNoBodyPkgToClient(pMsgHeader, _CMD_PING);
+  hps_log_stderr(0, "成功收到了心跳包并返回结果！");
   return true;
 }

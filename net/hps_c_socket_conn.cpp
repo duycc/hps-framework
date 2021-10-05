@@ -69,7 +69,7 @@ void hps_connection_s::putOneToFree() {
 
 void CSocket::initConnection() {
   lphps_connection_t p_Conn;
-  CMemory *          p_memory = CMemory::GetInstance();
+  CMemory *p_memory = CMemory::GetInstance();
 
   int ilenconnpool = sizeof(hps_connection_t);
   for (int i = 0; i < m_worker_connections; ++i) {
@@ -85,7 +85,7 @@ void CSocket::initConnection() {
 
 void CSocket::clearConnection() {
   lphps_connection_t p_Conn;
-  CMemory *          p_memory = CMemory::GetInstance();
+  CMemory *p_memory = CMemory::GetInstance();
 
   while (!m_connectionList.empty()) {
     p_Conn = m_connectionList.front();
@@ -111,7 +111,7 @@ lphps_connection_t CSocket::hps_get_connection(int isock) {
   }
 
   // 没有空闲连接
-  CMemory *          p_memory = CMemory::GetInstance();
+  CMemory *p_memory = CMemory::GetInstance();
   lphps_connection_t p_Conn = (lphps_connection_t)p_memory->AllocMemory(sizeof(hps_connection_t), true);
   p_Conn = new (p_Conn) hps_connection_t();
   p_Conn->getOneToUse();
@@ -131,6 +131,17 @@ void CSocket::hps_free_connection(lphps_connection_t pConn) {
 }
 
 void CSocket::inRecyConnectQueue(lphps_connection_t pConn) {
+  bool iffind = false;
+  for (auto *conn : m_recyconnectionList) {
+    if (conn = pConn) {
+      iffind = true;
+      break;
+    }
+  }
+  if (iffind) { // 防止重复释放
+    return;
+  }
+
   hps_log_stderr(0, "CSocket::inRecyConnectQueue()执行，连接入到回收队列中.");
   CLock lock(&m_recyconnqueueMutex);
 
@@ -143,17 +154,17 @@ void CSocket::inRecyConnectQueue(lphps_connection_t pConn) {
 
 void *CSocket::ServerSendQueueThread(void *threadData) {
   ThreadItem *pThread = static_cast<ThreadItem *>(threadData);
-  CSocket *   pSocketObj = pThread->_pThis;
-  int         err;
+  CSocket *pSocketObj = pThread->_pThis;
+  int err;
 
   std::list<char *>::iterator pos, pos2, posend;
 
-  char *             pMsgBuf;
+  char *pMsgBuf;
   LPSTRUC_MSG_HEADER pMsgHeader;
-  LPCOMM_PKG_HEADER  pPkgHeader;
+  LPCOMM_PKG_HEADER pPkgHeader;
   lphps_connection_t p_Conn;
-  unsigned short     itmp;
-  ssize_t            sendsize;
+  unsigned short itmp;
+  ssize_t sendsize;
 
   CMemory *p_memory = CMemory::GetInstance();
 
@@ -260,10 +271,10 @@ void *CSocket::ServerSendQueueThread(void *threadData) {
 // 处理连接回收线程
 void *CSocket::ServerRecyConnectionThread(void *threadData) {
   ThreadItem *pThread = static_cast<ThreadItem *>(threadData);
-  CSocket *   pSocketObj = pThread->_pThis;
+  CSocket *pSocketObj = pThread->_pThis;
 
-  time_t             currtime;
-  int                err;
+  time_t currtime;
+  int err;
   lphps_connection_t p_Conn;
 
   std::list<lphps_connection_t>::iterator pos, posend;
@@ -287,9 +298,9 @@ void *CSocket::ServerRecyConnectionThread(void *threadData) {
         }
 
         // ... 一些判断，待扩展
-        if (p_Conn->iThrowsendCount != 0) {
+        if (p_Conn->iThrowsendCount > 0) {
           hps_log_stderr(
-              0, "CSocekt::ServerRecyConnectionThread()中到释放时间却发现p_Conn.iThrowsendCount!=0，这个不该发生");
+              0, "CSocket::ServerRecyConnectionThread()中到释放时间却发现p_Conn.iThrowsendCount>0，这个不该发生");
         }
 
         --pSocketObj->m_totol_recyconnection_n;
