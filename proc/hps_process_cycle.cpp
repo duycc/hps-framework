@@ -180,8 +180,6 @@ static void hps_worker_process_init(int inum) {
   if (g_socket.Initialize_subproc() == false) {
     exit(-2);
   }
-  sleep(1);
-
   g_socket.hps_epoll_init(); // 初始化epoll
 
   // ... 待扩充

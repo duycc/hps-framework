@@ -24,20 +24,20 @@
 #include "hps_c_crc32.h"
 #include "hps_c_slogic.h"
 
-char **g_os_argv = NULL;  // 原始命令行参数数组
-int    g_os_argc;         // 启动参数个数
+char **g_os_argv;         // 原始命令行参数数组
+int g_os_argc;            // 启动参数个数
 size_t g_argvneedmem = 0; // 启动参数内存大小
 size_t g_envneedmem = 0;  // 相关环境变量总大小
-char * gp_envmem = NULL;  // 环境变量内存新位置
+char *gp_envmem = NULL;   // 环境变量内存新位置
 
-pid_t hps_pid;          // 当前进程 id
-pid_t hps_parent;       // 当前进程父进程 id
-int   hps_process;      // 进程类型
-int   g_daemonized = 0; // 是否以守护进程方式运行
-int   g_stopEvent;
+pid_t hps_pid;        // 当前进程 id
+pid_t hps_parent;     // 当前进程父进程 id
+int hps_process;      // 进程类型
+int g_daemonized = 0; // 是否以守护进程方式运行
+int g_stopEvent;
 
-CLogicSocket g_socket;     // 全局 socket 管理
-CThreadPool  g_threadpool; // 线程池
+CLogicSocket g_socket;    // 全局 socket 管理
+CThreadPool g_threadpool; // 线程池
 
 sig_atomic_t hps_reap; // 标识子进程状态变化
 
@@ -53,6 +53,7 @@ int main(int argc, char *const *argv) {
   hps_pid = getpid();
   hps_parent = getppid();
 
+  g_argvneedmem = 0;
   for (int i = 0; i < argc; ++i) {
     g_argvneedmem += strlen(argv[i] + 1);
   }
@@ -106,6 +107,7 @@ int main(int argc, char *const *argv) {
         break;
       }
       if (cdaemonresult == 1) {
+        free_resource();
         return 0; // 原始的父进程，需要（正常）退出
       }
       g_daemonized = 1; // 守护进程模式的 master

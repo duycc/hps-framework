@@ -53,6 +53,7 @@ void hps_connection_s::getOneToUse() {
 
   FloodAttackCount = 0;
   FloodkickLastTime = 0;
+  iSendCount = 0;
   return;
 }
 
@@ -137,8 +138,9 @@ void CSocket::hps_free_connection(lphps_connection_t pConn) {
 
 void CSocket::inRecyConnectQueue(lphps_connection_t pConn) {
   bool iffind = false;
+  CLock lock(&m_recyconnqueueMutex);
   for (auto *conn : m_recyconnectionList) {
-    if (conn = pConn) {
+    if (conn == pConn) {
       iffind = true;
       break;
     }
@@ -148,7 +150,6 @@ void CSocket::inRecyConnectQueue(lphps_connection_t pConn) {
   }
 
   // hps_log_stderr(0, "CSocket::inRecyConnectQueue()执行，连接入到回收队列中.");
-  CLock lock(&m_recyconnqueueMutex);
 
   pConn->inRecyTime = time(NULL);
   ++pConn->iCurrsequence;
@@ -213,6 +214,8 @@ void *CSocket::ServerSendQueueThread(void *threadData) {
           continue;
         }
 
+        --p_Conn->iSendCount;
+
         p_Conn->psendMemPointer = pMsgBuf;
         pos2 = pos;
         pos++;
@@ -241,9 +244,10 @@ void *CSocket::ServerSendQueueThread(void *threadData) {
               hps_log_stderr(errno, "CSocket::ServerSendQueueThread()hps_epoll_oper_event()失败.");
             }
 
-            hps_log_stderr(
-                errno, "CSocket::ServerSendQueueThread()中数据没发送完毕【发送缓冲区满】，整个要发送%d，实际发送了%d。",
-                p_Conn->isendlen, sendsize);
+            // hps_log_stderr(
+            //     errno,
+            //     "CSocket::ServerSendQueueThread()中数据没发送完毕【发送缓冲区满】，整个要发送%d，实际发送了%d。",
+            //     p_Conn->isendlen, sendsize);
           }
           continue;
         } else if (sendsize == 0) {
@@ -354,8 +358,9 @@ void *CSocket::ServerRecyConnectionThread(void *threadData) {
 // 当 accept 成功，后续流程失败时，需要回收这个 socket
 void CSocket::hps_close_connection(lphps_connection_t pConn) {
   hps_free_connection(pConn);
-  if (close(pConn->fd) == -1) {
-    hps_log_error_core(HPS_LOG_ALERT, errno, "CSocket::hps_close_connection()中close(%d)失败!", pConn->fd);
+  if (pConn->fd != -1) {
+    close(pConn->fd);
+    pConn->fd = -1;
   }
   return;
 }

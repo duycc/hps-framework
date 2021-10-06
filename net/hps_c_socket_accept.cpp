@@ -59,7 +59,7 @@ void CSocket::hps_event_accept(lphps_connection_t oldc) {
       } else if (err == EMFILE || err == ENFILE) { // EMFILE: 进程的 fd 已使用完
         level = HPS_LOG_CRIT;
       }
-      hps_log_error_core(level, errno, "CSocket::hps_event_accept()中accept4()失败!");
+      // hps_log_error_core(level, errno, "CSocket::hps_event_accept()中accept4()失败!");
 
       if (use_accept4 && err == ENOSYS) { // 没有 accept4 函数，重新使用 accept 函数
         use_accept4 = 0;

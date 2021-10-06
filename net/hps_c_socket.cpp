@@ -42,9 +42,10 @@ CSocket::CSocket() {
 
   m_cur_size_ = 0;
   m_timer_value_ = 0;
+  m_iDiscardSendPkgCount = 0;
 
   m_onlineUserCount = 0;
-
+  m_lastprintTime = 0;
   return;
 }
 

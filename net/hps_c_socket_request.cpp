@@ -80,7 +80,7 @@ void CSocket::hps_read_request_handler(lphps_connection_t c) {
   }
 
   if (isflood) {
-    hps_log_stderr(errno, "发现客户端flood，干掉该客户端!");
+    // hps_log_stderr(errno, "发现客户端flood，干掉该客户端!");
     zdClosesocketProc(c);
   }
   return;
@@ -99,10 +99,11 @@ ssize_t CSocket::recvproc(lphps_connection_t c, char *buff, ssize_t buflen) {
   n = recv(c->fd, buff, buflen, 0);
   if (n == 0) {
     // 客户端关闭
-    if (close(c->fd) == -1) {
-      hps_log_error_core(HPS_LOG_ALERT, errno, "CSocket::recvproc()中close(%d)失败!", c->fd);
-    }
-    this->inRecyConnectQueue(c);
+    // if (close(c->fd) == -1) {
+    //   hps_log_error_core(HPS_LOG_ALERT, errno, "CSocket::recvproc()中close(%d)失败!", c->fd);
+    // }
+    // this->inRecyConnectQueue(c);
+    zdClosesocketProc(c);
     return -1;
   }
   if (n < 0) {
@@ -118,12 +119,18 @@ ssize_t CSocket::recvproc(lphps_connection_t c, char *buff, ssize_t buflen) {
     if (errno == ECONNRESET) {
       // 客户端非正常退出，后续释放连接即可
     } else {
-      hps_log_stderr(errno, "CSocket::recvproc()中发生错误！");
+      if (errno == EBADF) // #define EBADF   9 /* Bad file descriptor */
+      {
+        // 因为多线程，偶尔会干掉socket，所以不排除产生这个错误的可能性
+      } else {
+        hps_log_stderr(errno, "CSocket::recvproc()中发生错误！");
+      }
     }
-    if (close(c->fd) == -1) {
-      hps_log_error_core(HPS_LOG_ALERT, errno, "CSocket::recvproc()中close_2(%d)失败!", c->fd);
-    }
-    this->inRecyConnectQueue(c);
+    // if (close(c->fd) == -1) {
+    //   hps_log_error_core(HPS_LOG_ALERT, errno, "CSocket::recvproc()中close_2(%d)失败!", c->fd);
+    // }
+    // this->inRecyConnectQueue(c);
+    zdClosesocketProc(c);
     return -1;
   }
 
@@ -190,7 +197,6 @@ void CSocket::hps_wait_request_handler_proc_plast(lphps_connection_t c, bool &is
     CMemory *p_memory = CMemory::GetInstance();
     p_memory->FreeMemory(c->precvMemPointer);
   }
-  c->precvMemPointer = NULL;
 
   // 接受下一个包
   c->precvMemPointer = NULL;
