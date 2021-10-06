@@ -20,6 +20,7 @@
 
 void hps_process_events_and_timers() {
   g_socket.hps_epoll_process_events(-1);
+  g_socket.printTDInfo();
 
   // ... 待扩充
   return;

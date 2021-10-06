@@ -147,7 +147,7 @@ void CSocket::inRecyConnectQueue(lphps_connection_t pConn) {
     return;
   }
 
-  hps_log_stderr(0, "CSocket::inRecyConnectQueue()执行，连接入到回收队列中.");
+  // hps_log_stderr(0, "CSocket::inRecyConnectQueue()执行，连接入到回收队列中.");
   CLock lock(&m_recyconnqueueMutex);
 
   pConn->inRecyTime = time(NULL);
@@ -222,7 +222,7 @@ void *CSocket::ServerSendQueueThread(void *threadData) {
         itmp = ntohs(pPkgHeader->pkgLen);
         p_Conn->isendlen = itmp;
 
-        hps_log_stderr(0, "即将发送数据%ud。", p_Conn->isendlen);
+        // hps_log_stderr(0, "即将发送数据%ud。", p_Conn->isendlen);
 
         sendsize = pSocketObj->sendproc(p_Conn, p_Conn->psendbuf, p_Conn->isendlen);
         if (sendsize > 0) {
@@ -230,7 +230,7 @@ void *CSocket::ServerSendQueueThread(void *threadData) {
             p_memory->FreeMemory(p_Conn->psendMemPointer);
             p_Conn->psendMemPointer = NULL;
             p_Conn->iThrowsendCount = 0;
-            hps_log_stderr(0, "CSocket::ServerSendQueueThread()中数据发送完毕，很好。");
+            // hps_log_stderr(0, "CSocket::ServerSendQueueThread()中数据发送完毕，很好。");
           } else {
 
             p_Conn->psendbuf = p_Conn->psendbuf + sendsize;
@@ -312,7 +312,7 @@ void *CSocket::ServerRecyConnectionThread(void *threadData) {
         --pSocketObj->m_totol_recyconnection_n;
         pSocketObj->m_recyconnectionList.erase(pos);
 
-        hps_log_stderr(0, "CSocket::ServerRecyConnectionThread()执行，连接%d被归还.", p_Conn->fd);
+        // hps_log_stderr(0, "CSocket::ServerRecyConnectionThread()执行，连接%d被归还.", p_Conn->fd);
 
         pSocketObj->hps_free_connection(p_Conn);
         goto lblRRTD;

@@ -19,7 +19,7 @@
 
 // master 创建 worker 子进程，并初始化子进程
 static void hps_start_worker_processes(int threadnums);
-static int  hps_spawn_process(int threadnums, const char *pprocname);
+static int hps_spawn_process(int threadnums, const char *pprocname);
 static void hps_worker_process_cycle(int inum, const char *pprocname);
 static void hps_worker_process_init(int inum);
 
@@ -78,7 +78,7 @@ void hps_master_process_cycle() {
                       // c. 执行相应信号处理程序
                       // d. 信号处理程序返回，sigsuspend()返回，继续向下执行
     sleep(1);
-    hps_log_stderr(0, "master 进程 %P 休息1秒", hps_pid);
+    // hps_log_stderr(0, "master 进程 %P 休息1秒", hps_pid);
 
     // 根据实际需求完善...
   }
@@ -173,7 +173,7 @@ static void hps_worker_process_init(int inum) {
 
   // 线程池代码，率先创建
   CConfig *p_config = CConfig::GetInstance();
-  int      tmpthreadnums = p_config->GetIntDefault("ProcMsgRecvWorkThreadCount", 5);
+  int tmpthreadnums = p_config->GetIntDefault("ProcMsgRecvWorkThreadCount", 5);
   if (g_threadpool.Create(tmpthreadnums) == false) {
     exit(-2);
   }

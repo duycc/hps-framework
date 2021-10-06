@@ -245,7 +245,7 @@ void CSocket::hps_write_request_handler(lphps_connection_t pConn) {
     if (hps_epoll_oper_event(pConn->fd, EPOLL_CTL_MOD, EPOLLOUT, 1, pConn) == -1) {
       hps_log_stderr(errno, "CSocket::hps_write_request_handler()中hps_epoll_oper_event()失败。");
     }
-    hps_log_stderr(0, "CSocket::hps_write_request_handler()中数据发送完毕，很好。");
+    // hps_log_stderr(0, "CSocket::hps_write_request_handler()中数据发送完毕，很好。");
   }
 
   if (sem_post(&m_semEventSendQueue) == -1)

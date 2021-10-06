@@ -45,7 +45,7 @@ bool CThreadPool::Create(int threadNum) {
       hps_log_stderr(err, "CThreadPool::Create()创建线程%d失败，返回的错误码为%d!", i, err);
       return false;
     } else {
-      hps_log_stderr(0, "CThreadPool::Create()创建线程%d成功,线程id=%d", pNew->_Handle);
+      // hps_log_stderr(0, "CThreadPool::Create()创建线程%d成功,线程id=%d", pNew->_Handle);
     }
   }
 

@@ -122,7 +122,7 @@ void CLogicSocket::procPingTimeOutChecking(LPSTRUC_MSG_HEADER tmpmsg, time_t cur
     if (m_ifTimeOutKick == 1) {
       zdClosesocketProc(p_Conn);
     } else if ((cur_time - p_Conn->lastPingTime) > (m_iWaitTime * 3 + 10)) {
-      hps_log_stderr(0, "时间到不发心跳包，踢出去!");
+      // hps_log_stderr(0, "时间到不发心跳包，踢出去!");
       zdClosesocketProc(p_Conn);
     }
 
@@ -193,12 +193,40 @@ bool CLogicSocket::_HandleRegister(lphps_connection_t pConn, LPSTRUC_MSG_HEADER 
 
   this->sendMsg(p_sendbuf);
 
-  hps_log_stderr(0, "执行了CLogicSocket::_HandleRegister()!");
+  // hps_log_stderr(0, "执行了CLogicSocket::_HandleRegister()!");
   return true;
 }
 bool CLogicSocket::_HandleLogIn(lphps_connection_t pConn, LPSTRUC_MSG_HEADER pMsgHeader, char *pPkgBody,
                                 unsigned short iBodyLength) {
-  hps_log_stderr(0, "执行了CLogicSocket::_HandleLogIn()!");
+  if (pPkgBody == NULL) {
+    return false;
+  }
+  int iRecvLen = sizeof(STRUCT_LOGIN);
+  if (iRecvLen != iBodyLength) {
+    return false;
+  }
+  CLock lock(&pConn->logicProcMutex);
+
+  LPSTRUCT_LOGIN p_RecvInfo = (LPSTRUCT_LOGIN)pPkgBody;
+  p_RecvInfo->username[sizeof(p_RecvInfo->username) - 1] = 0;
+  p_RecvInfo->password[sizeof(p_RecvInfo->password) - 1] = 0;
+
+  LPCOMM_PKG_HEADER pPkgHeader;
+  CMemory *p_memory = CMemory::GetInstance();
+  CCRC32 *p_crc32 = CCRC32::GetInstance();
+
+  int iSendLen = sizeof(STRUCT_LOGIN);
+  char *p_sendbuf = (char *)p_memory->AllocMemory(m_iLenMsgHeader + m_iLenPkgHeader + iSendLen, false);
+  memcpy(p_sendbuf, pMsgHeader, m_iLenMsgHeader);
+  pPkgHeader = (LPCOMM_PKG_HEADER)(p_sendbuf + m_iLenMsgHeader);
+  pPkgHeader->msgCode = _CMD_LOGIN;
+  pPkgHeader->msgCode = htons(pPkgHeader->msgCode);
+  pPkgHeader->pkgLen = htons(m_iLenPkgHeader + iSendLen);
+  LPSTRUCT_LOGIN p_sendInfo = (LPSTRUCT_LOGIN)(p_sendbuf + m_iLenMsgHeader + m_iLenPkgHeader);
+  pPkgHeader->crc32 = p_crc32->Get_CRC((unsigned char *)p_sendInfo, iSendLen);
+  pPkgHeader->crc32 = htonl(pPkgHeader->crc32);
+  // hps_log_stderr(0,"成功收到了登录并返回结果！");
+  sendMsg(p_sendbuf);
   return true;
 }
 
@@ -212,6 +240,6 @@ bool CLogicSocket::_HandlePing(lphps_connection_t pConn, LPSTRUC_MSG_HEADER pMsg
   pConn->lastPingTime = time(NULL);
 
   SendNoBodyPkgToClient(pMsgHeader, _CMD_PING);
-  hps_log_stderr(0, "成功收到了心跳包并返回结果！");
+  // hps_log_stderr(0, "成功收到了心跳包并返回结果！");
   return true;
 }

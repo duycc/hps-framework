@@ -80,6 +80,14 @@ void CSocket::hps_event_accept(lphps_connection_t oldc) {
       return;
     }
 
+    // 恶意用户连上来发了1条数据就断，会导致频繁调用hps_get_connection()短时间内产生大量连接，危及本服务器安全
+    if (m_connectionList.size() > (m_worker_connections * 5)) {
+      if (m_freeconnectionList.size() < m_worker_connections) {
+        close(s);
+        return;
+      }
+    }
+
     newc = hps_get_connection(s);
     if (newc == NULL) {
       if (close(s) == -1) {

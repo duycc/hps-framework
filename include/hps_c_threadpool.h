@@ -28,14 +28,16 @@ public:
 
   void Call();
 
+  int getRecvMsgQueueCount() { return m_iRecvMsgQueueCount; }
+
 private:
   static void *ThreadFunc(void *threadData); // 线程回调函数
 
 private:
   struct ThreadItem {
-    pthread_t    _Handle;   // 线程句柄
-    CThreadPool *_pThis;    // 线程池的指针
-    bool         ifrunning; // 是否启动
+    pthread_t _Handle;   // 线程句柄
+    CThreadPool *_pThis; // 线程池的指针
+    bool ifrunning;      // 是否启动
 
     ThreadItem(CThreadPool *pthis) : _pThis(pthis), ifrunning(false) {}
     ~ThreadItem() {}
@@ -43,19 +45,19 @@ private:
 
 private:
   static pthread_mutex_t m_pthreadMutex; // 线程互斥锁
-  static pthread_cond_t  m_pthreadCond;  // 线程同步条件变量
-  static bool            m_shutdown;     // 线程退出标志
+  static pthread_cond_t m_pthreadCond;   // 线程同步条件变量
+  static bool m_shutdown;                // 线程退出标志
 
   int m_iThreadNum; // 需要创建的线程数量
 
   std::atomic<int> m_iRunningThreadNum; // 运行中的线程数
-  time_t           m_iLastEmgTime;      // 上次线程不够使用的告警时间，防止日志太多
+  time_t m_iLastEmgTime;                // 上次线程不够使用的告警时间，防止日志太多
 
   std::vector<ThreadItem *> m_threadVector; // 线程容器
 
   // 消息队列相关
   std::list<char *> m_MsgRecvQueue;
-  int               m_iRecvMsgQueueCount;
+  int m_iRecvMsgQueueCount;
 };
 
 #endif // __HPS_C_THREADPOOL_H__

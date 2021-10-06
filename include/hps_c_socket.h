@@ -74,8 +74,9 @@ struct hps_connection_s {
   time_t lastPingTime; // 心跳包检测
 
   // 网络安全
-  uint64_t FloodkickLastTime; // Flood攻击上次收到包的时间
-  int FloodAttackCount;       // Flood攻击在该时间内收到包的次数统计
+  uint64_t FloodkickLastTime;  // Flood攻击上次收到包的时间
+  int FloodAttackCount;        // Flood攻击在该时间内收到包的次数统计
+  std::atomic<int> iSendCount; // 发送队列中的数据条目数
 
   lphps_connection_t next; // 后继指针，指向下一个本类型对象，用于把"空闲"的连接池对象构成一个单向链表，方便取用
 };
@@ -96,6 +97,8 @@ public:
   virtual bool Initialize();
   virtual bool Initialize_subproc();
   virtual void Shutdown_subproc();
+
+  void printTDInfo(); // 打印统计信息
 
   virtual void threadRecvProcFunc(char *pMsgBuf); // 处理客户端请求
   virtual void procPingTimeOutChecking(LPSTRUC_MSG_HEADER tmpmsg, time_t cur_time);
@@ -219,5 +222,9 @@ private:
   int m_floodAkEnable;              // Flood攻击检测是否开启,1：开启   0：不开启
   unsigned int m_floodTimeInterval; // 表示每次收到数据包的时间间隔是100(毫秒)
   int m_floodKickCount;             // 累积收到多少次即踢出
+
+  // 统计用途
+  time_t m_lastprintTime;     // 上次打印统计信息的时间(10秒钟打印一次)
+  int m_iDiscardSendPkgCount; // 丢弃的发送数据包数量
 };
 #endif // __HPS_C_SOCKET_H__

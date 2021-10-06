@@ -295,6 +295,31 @@ bool CSocket::TestFlood(lphps_connection_t pConn) {
   return reco;
 }
 
+void CSocket::printTDInfo() {
+  time_t currtime = time(NULL);
+  if ((currtime - m_lastprintTime) > 10) {
+    // 超过10秒我们打印一次
+    int tmprmqc = g_threadpool.getRecvMsgQueueCount();
+
+    m_lastprintTime = currtime;
+    int tmpoLUC = m_onlineUserCount;
+    int tmpsmqc = m_iSendMsgQueueCount;
+    hps_log_stderr(0, "------------------------------------begin--------------------------------------");
+    hps_log_stderr(0, "当前在线人数/总人数(%d/%d)。", tmpoLUC, m_worker_connections);
+    hps_log_stderr(0, "连接池中空闲连接/总连接/要释放的连接(%d/%d/%d)。", m_freeconnectionList.size(),
+                   m_connectionList.size(), m_recyconnectionList.size());
+    hps_log_stderr(0, "当前时间队列大小(%d)。", m_timerQueuemap.size());
+    hps_log_stderr(0, "当前收消息队列/发消息队列大小分别为(%d/%d)，丢弃的待发送数据包数量为%d。", tmprmqc, tmpsmqc,
+                   m_iDiscardSendPkgCount);
+    if (tmprmqc > 100000) {
+      // 接收队列过大，报一下，这个属于应该 引起警觉的，考虑限速等等手段
+      hps_log_stderr(0, "接收队列条目数量过大(%d)，要考虑限速或者增加处理线程数量了！！！！！！", tmprmqc);
+    }
+    hps_log_stderr(0, "-------------------------------------end---------------------------------------");
+  }
+  return;
+}
+
 int CSocket::hps_epoll_init() {
   m_epollhandle = epoll_create(m_worker_connections);
   if (m_epollhandle == -1) {
@@ -328,12 +353,34 @@ int CSocket::hps_epoll_init() {
 }
 
 void CSocket::sendMsg(char *psendbuf) {
+  CMemory *p_memory = CMemory::GetInstance();
   CLock lock(&m_sendMessageQueueMutex);
+
+  // 发送消息队列过大可能给服务器带来风险
+  if (m_iSendMsgQueueCount > 50000) {
+    // 发送队列过大，比如客户端恶意不接受数据，就会导致这个队列越来越大
+    // 为了服务器安全，丢弃一些数据的发送
+    m_iDiscardSendPkgCount++;
+    p_memory->FreeMemory(psendbuf);
+    return;
+  }
+
+  LPSTRUC_MSG_HEADER pMsgHeader = (LPSTRUC_MSG_HEADER)psendbuf;
+  lphps_connection_t p_Conn = pMsgHeader->pConn;
+  if (p_Conn->iSendCount > 400) {
+    hps_log_stderr(0, "CSocket::msgSend()中发现某用户%d积压了大量待发送数据包，切断与他的连接！", p_Conn->fd);
+    m_iDiscardSendPkgCount++;
+    p_memory->FreeMemory(psendbuf);
+    zdClosesocketProc(p_Conn);
+    return;
+  }
+
+  ++p_Conn->iSendCount;
   m_MsgSendQueue.push_back(psendbuf);
   ++m_iSendMsgQueueCount;
 
   if (sem_post(&m_semEventSendQueue) == -1) {
-    hps_log_stderr(0, "CSocket::sendMsg()sem_post(&m_semEventSendQueue)失败.");
+    hps_log_stderr(0, "CSocket::msgSend()中sem_post(&m_semEventSendQueue)失败.");
   }
   return;
 }
