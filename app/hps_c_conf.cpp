@@ -1,9 +1,9 @@
 ﻿//===--------------------------- app/hps_c_conf.cpp - HP-Server -----------------------------------------*- C++ -*-===//
-// brief :
+// Brief :
 //   Read configuration file
 //
-// author: YongDu
-// date  : 2021-09-12
+// Author: YongDu
+// Date  : 2021-09-12
 //===--------------------------------------------------------------------------------------------------------------===//
 
 #include <stdio.h>
@@ -40,7 +40,7 @@ bool CConfig::Load(const char *p_conf_name) {
     if (fgets(linebuf, 500, fp) == nullptr) {
       continue;
     }
-    if (linebuf[0] == 0) {
+    if (linebuf[0] == 0) { // 空行
       continue;
     }
 

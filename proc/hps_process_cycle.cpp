@@ -53,10 +53,6 @@ void hps_master_process_cycle() {
   if (size < 1000) {
     char title[1000] = {0};
     strcpy(title, (const char *)master_process);
-    // strcat(title, " ");
-    // for (int i = 0; i < g_os_argc; ++i) {
-    //   strcat(title, g_os_argv[i]);
-    // }
     hps_setproctitle(title);
     hps_log_error_core(HPS_LOG_NOTICE, 0, "%s %P 【master】进程启动并执行......!", title, hps_pid);
   }
@@ -140,20 +136,14 @@ static void hps_worker_process_cycle(int inum, const char *pprocname) {
   hps_log_error_core(HPS_LOG_NOTICE, 0, "%s %P 【worker】进程启动并执行......!", pprocname, hps_pid);
 
   // 测试代码，测试线程池的关闭
-  // sleep(5); //休息5秒
-  // g_threadpool.StopAll(); //测试Create()后立即释放的效果
+  // sleep(5)
+  // g_threadpool.StopAll()
+  // 测试Create()后立即释放的效果
 
   for (;;) {
     // hps_log_error_core(0, 0, "worker process %d pid = %P", inum, hps_pid);
     // sleep(1);
-
     hps_process_events_and_timers(); // 处理网络事件和定时器事件
-
-    /*if(false) //优雅的退出
-    {
-        g_stopEvent = 1;
-        break;
-    }*/
   }
 
   g_threadpool.StopAll();
