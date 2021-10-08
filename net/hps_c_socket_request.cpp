@@ -1,9 +1,9 @@
 //===--------------------------- net/hps_c_socket_request.cpp - [HP-Server] -----------------------------*- C++ -*-===//
-// brief :
+// Brief :
 //   Receive data
 //
-// author: YongDu
-// date  : 2021-09-17
+// Author: YongDu
+// Date  : 2021-09-17
 //===--------------------------------------------------------------------------------------------------------------===//
 
 #include <arpa/inet.h>
@@ -185,7 +185,6 @@ void CSocket::hps_wait_request_handler_proc_p1(lphps_connection_t c, bool &isflo
       c->irecvlen = e_pkgLen - m_iLenPkgHeader;
     }
   }
-
   return;
 }
 

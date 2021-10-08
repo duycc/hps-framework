@@ -110,13 +110,13 @@ lphps_connection_t CSocket::hps_get_connection(int isock) {
   if (!m_freeconnectionList.empty()) {
     lphps_connection_t p_Conn = m_freeconnectionList.front();
     m_freeconnectionList.pop_front();
-    p_Conn->getOneToUse();
+    p_Conn->getOneToUse(); // 第一次使用和后续使用都需要做一些清理工作并且初始化
     --m_free_connection_n;
     p_Conn->fd = isock;
     return p_Conn;
   }
 
-  // 没有空闲连接
+  // 没有空闲连接，新增一条连接，并且加入到连接池维护
   CMemory *p_memory = CMemory::GetInstance();
   lphps_connection_t p_Conn = (lphps_connection_t)p_memory->AllocMemory(sizeof(hps_connection_t), true);
   p_Conn = new (p_Conn) hps_connection_t();

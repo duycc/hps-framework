@@ -71,7 +71,7 @@ void CSocket::hps_event_accept(lphps_connection_t oldc) {
 
       if (err == EMFILE || err == ENFILE) {
       }
-      return;
+      return; // 最终结果都是返回
     }
 
     if (m_onlineUserCount >= m_worker_connections) { // 用户连接数过多
