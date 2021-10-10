@@ -1,9 +1,9 @@
 //===--------------------------- logic/hps_c_slogic.cpp - [HP-Server] -----------------------------------*- C++ -*-===//
-// brief :
+// Brief :
+//  业务逻辑处理相关
 //
-//
-// author: YongDu
-// date  : 2021-09-23
+// Author: YongDu
+// Date  : 2021-09-23
 //===--------------------------------------------------------------------------------------------------------------===//
 
 #include <stdio.h>
@@ -164,6 +164,7 @@ bool CLogicSocket::_HandleRegister(lphps_connection_t pConn, LPSTRUC_MSG_HEADER 
     return false;
   }
 
+  // 对于同一客户端的同一类型的消息，需要互斥处理
   CLock lock(&pConn->logicProcMutex);
 
   LPSTRUCT_REGISTER p_RecvInfo = (LPSTRUCT_REGISTER)pPkgBody;
@@ -196,6 +197,7 @@ bool CLogicSocket::_HandleRegister(lphps_connection_t pConn, LPSTRUC_MSG_HEADER 
   // hps_log_stderr(0, "执行了CLogicSocket::_HandleRegister()!");
   return true;
 }
+
 bool CLogicSocket::_HandleLogIn(lphps_connection_t pConn, LPSTRUC_MSG_HEADER pMsgHeader, char *pPkgBody,
                                 unsigned short iBodyLength) {
   if (pPkgBody == NULL) {

@@ -1,9 +1,9 @@
 //===--------------------------- misc/hps_c_threadpool.cpp - [HP-Server] --------------------------------*- C++ -*-===//
-// brief :
+// Brief :
 //   ThreadPool
 //
-// author: YongDu
-// date  : 2021-09-22
+// Author: YongDu
+// Date  : 2021-09-22
 //===--------------------------------------------------------------------------------------------------------------===//
 
 #include <unistd.h>
@@ -16,7 +16,7 @@
 #include "hps_macro.h"
 
 pthread_mutex_t CThreadPool::m_pthreadMutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t  CThreadPool::m_pthreadCond = PTHREAD_COND_INITIALIZER;
+pthread_cond_t CThreadPool::m_pthreadCond = PTHREAD_COND_INITIALIZER;
 
 bool CThreadPool::m_shutdown = false;
 
@@ -34,7 +34,7 @@ CThreadPool::~CThreadPool() {
 
 bool CThreadPool::Create(int threadNum) {
   ThreadItem *pNew;
-  int         err;
+  int err;
 
   m_iThreadNum = threadNum; // 要创建的线程数量
 
@@ -80,7 +80,7 @@ void CThreadPool::inMsgRecvQueueAndSignal(char *buf) {
 }
 
 void CThreadPool::clearMsgRecvQueue() {
-  char *   sTmpMempoint;
+  char *sTmpMempoint;
   CMemory *p_memory = CMemory::GetInstance();
 
   while (!m_MsgRecvQueue.empty()) {
@@ -93,11 +93,11 @@ void CThreadPool::clearMsgRecvQueue() {
 
 // 线程入口函数，当用pthread_create()创建线程后，ThreadFunc()函数立即执行
 void *CThreadPool::ThreadFunc(void *threadData) {
-  ThreadItem * pThread = static_cast<ThreadItem *>(threadData);
+  ThreadItem *pThread = static_cast<ThreadItem *>(threadData);
   CThreadPool *pThreadPoolObj = pThread->_pThis;
 
   CMemory *p_memory = CMemory::GetInstance();
-  int      err;
+  int err;
 
   pthread_t tid = pthread_self(); // 获取线程自身id
   while (true) {
