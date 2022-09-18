@@ -13,20 +13,20 @@
 
 // 自动管理互斥锁
 class CLock {
-public:
-  CLock(pthread_mutex_t *pMutex) {
-    m_pMutex = pMutex;
-    pthread_mutex_lock(m_pMutex);
-    return;
-  }
+  public:
+    CLock(pthread_mutex_t* pMutex) {
+        m_pMutex = pMutex;
+        pthread_mutex_lock(m_pMutex);
+        return;
+    }
 
-  ~CLock() {
-    pthread_mutex_unlock(m_pMutex);
-    return;
-  }
+    ~CLock() {
+        pthread_mutex_unlock(m_pMutex);
+        return;
+    }
 
-private:
-  pthread_mutex_t *m_pMutex;
+  private:
+    pthread_mutex_t* m_pMutex;
 };
 
 #endif // __HPS_C_LOCKMUTEX_H__

@@ -34,23 +34,23 @@
  * @param len
  * @return size_t 信息字符串长度
  */
-size_t CSocket::hps_sock_ntop(struct sockaddr *sa, int port, u_char *text, size_t len) {
-  struct sockaddr_in *sin;
-  u_char *            p;
+size_t CSocket::hps_sock_ntop(struct sockaddr* sa, int port, char* text, size_t len) {
+    struct sockaddr_in* sin;
+    char* p;
 
-  switch (sa->sa_family) {
-  case AF_INET:
-    sin = (struct sockaddr_in *)sa;
-    p = (u_char *)&sin->sin_addr;
-    if (port) {
-      p = hps_snprintf(text, len, "%ud.%ud.%ud.%ud:%d", p[0], p[1], p[2], p[3], ntohs(sin->sin_port));
-    } else {
-      p = hps_snprintf(text, len, "%ud.%ud.%ud.%ud", p[0], p[1], p[2], p[3]);
+    switch (sa->sa_family) {
+    case AF_INET:
+        sin = (struct sockaddr_in*)sa;
+        p = (char*)&sin->sin_addr;
+        if (port) {
+            p = hps_snprintf(text, len, "%ud.%ud.%ud.%ud:%d", p[0], p[1], p[2], p[3], ntohs(sin->sin_port));
+        } else {
+            p = hps_snprintf(text, len, "%ud.%ud.%ud.%ud", p[0], p[1], p[2], p[3]);
+        }
+        return (p - text);
+        break;
+    default:
+        break;
     }
-    return (p - text);
-    break;
-  default:
-    break;
-  }
-  return 0;
+    return 0;
 }

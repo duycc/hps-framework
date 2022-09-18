@@ -14,7 +14,7 @@
 #define HPS_MAX_ERROR_STR 2048 // 显示的错误信息最大数组长度
 
 // 一般 memcpy 返回的是指向目标 dst 的指针，而 hps_memcpy 返回的是目标拷贝数据后的终点位置，方便多次复制数据
-#define hps_memcpy(dst, src, n) (((u_char *)memcpy(dst, src, n)) + (n))
+#define hps_memcpy(dst, src, n) (((char*)memcpy(dst, src, n)) + (n))
 #define hps_min(val1, val2) ((val1 < val2) ? (val1) : (val2))
 
 // 数字相关

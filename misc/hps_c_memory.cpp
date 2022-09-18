@@ -12,7 +12,7 @@
 
 #include "hps_c_memory.h"
 
-CMemory *CMemory::m_instance = NULL;
+CMemory* CMemory::m_instance = NULL;
 
 /**
  * @brief 分配内存
@@ -21,15 +21,15 @@ CMemory *CMemory::m_instance = NULL;
  * @param ifmemset 分配时是否需要初始化
  * @return void*
  */
-void *CMemory::AllocMemory(int memCount, bool ifmemset) {
-  void *tmpData = (void *)new char[memCount];
-  if (ifmemset) {
-    memset(tmpData, 0, memCount);
-  }
-  return tmpData;
+void* CMemory::AllocMemory(int memCount, bool ifmemset) {
+    void* tmpData = (void*)new char[memCount];
+    if (ifmemset) {
+        memset(tmpData, 0, memCount);
+    }
+    return tmpData;
 }
 
-void CMemory::FreeMemory(void *point) {
-  delete[]((char *)point);
-  return;
+void CMemory::FreeMemory(void* point) {
+    delete[]((char*)point);
+    return;
 }

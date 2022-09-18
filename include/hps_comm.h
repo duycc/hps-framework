@@ -23,9 +23,9 @@
 
 // 包头结构
 typedef struct _COMM_PKG_HEADER {
-  unsigned short pkgLen;  // "包头 + 包体"的总长度
-  unsigned short msgCode; // 消息类型
-  int            crc32;   // CRC32效验
+    unsigned short pkgLen;  // "包头 + 包体"的总长度
+    unsigned short msgCode; // 消息类型
+    int crc32;              // CRC32效验
 } COMM_PKG_HEADER, *LPCOMM_PKG_HEADER;
 
 #pragma pack()
